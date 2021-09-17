@@ -13,6 +13,7 @@ library(broom)
 library(car)
 library(ggfortify)
 library(countrycode)
+library(rvest)
 ```
 
 ```{r}
@@ -32,6 +33,95 @@ ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>%
 skimr::skim(ask_a_manager_2021)
 
 ```
+```{r}
+# use countrycode::countryname() to clean country names
+salary_iso3 <- ask_a_manager_2021 %>% 
+  select(country) %>% 
+  pull() %>% 
+  countrycode(
+    origin = "country.name",
+    destination = "iso3c") %>% 
+  as_tibble()
+
+ask_a_manager_2021 <- bind_cols(ask_a_manager_2021, salary_iso3)
+```
+
+```{r}
+colnames(ask_a_manager_2021)[19] <- "Country"
+```
+
+
+```{r}
+unique(ask_a_manager_2021$currency_other)
+```
+
+
+```{r}
+clean_data <- ask_a_manager_2021 %>% 
+  select(how_old_are_you, industry, currency,Country,state,city,overall_years_of_professional_experience,years_of_experience_in_field,highest_level_of_education_completed,gender,race,other_monetary_comp,annual_salary) 
+
+```
+
+```{r}
+
+url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States"
+
+# get tables that exist on wikipedia page 
+tables <- url %>% 
+  read_html() %>% 
+  html_nodes(css="table")
+
+
+# parse HTML tables into a dataframe called polls 
+# Use purr::map() to create a list of all tables in URL
+states <- map(tables, . %>% 
+             html_table(fill=TRUE)%>% 
+             janitor::clean_names())
+states_data <- states[[2]] %>% 
+  select(flag_name_andpostal_abbreviation_13, flag_name_andpostal_abbreviation_13_2)
+states_data = states_data[-1,]
+
+colnames(states_data) <- c("state", "state_abb")
+
+states_data[17,1] <- "Kentucky"
+states_data[21,1] <- "Massachusetts"
+states_data[38,1] <- "Pennsylvania"
+states_data[46,1] <- "Virginia"
+  
+```
+
+```{r}
+clean_data <- clean_data %>%
+  left_join(states_data, by="state")
+```
+
+```{r}
+clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
+```
+
+```{r}
+clean_data$industry <- gsub("Pharmaceuticals", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharmaceutical", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Libraries", "Library", clean_data$industry)
+clean_data$industry <- gsub("Public Library", "Library", clean_data$industry)
+clean_data$industry <- gsub("Biotech/pharmaceuticals", "Biotech", clean_data$industry)
+clean_data$industry <- gsub("Pharma Development", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharma Manufacturing", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharma/biotechnology", "Pharma", clean_data$industry)
+```
+
+```{r}
+temp <- clean_data %>% 
+  count(industry, sort=TRUE) 
+  
+temp
+```
+```{r}
+temp2 <- clean_data[is.na(clean_data$state_abb),]
+```
+
+
+
 
 
 ```{r}
