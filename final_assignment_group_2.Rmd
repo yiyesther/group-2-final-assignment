@@ -31,9 +31,9 @@ ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>%
 
 ```{r}
 skimr::skim(ask_a_manager_2021)
-
 ```
 ```{r}
+# Clean "country"
 # use countrycode::countryname() to clean country names
 salary_iso3 <- ask_a_manager_2021 %>% 
   select(country) %>% 
@@ -44,26 +44,29 @@ salary_iso3 <- ask_a_manager_2021 %>%
   as_tibble()
 
 ask_a_manager_2021 <- bind_cols(ask_a_manager_2021, salary_iso3)
-```
 
-```{r}
+#Change the column name
 colnames(ask_a_manager_2021)[19] <- "Country"
+
 ```
 
 
 ```{r}
-unique(ask_a_manager_2021$currency_other)
-```
-
-
-```{r}
+#Create a new dataframe for the desired data
 clean_data <- ask_a_manager_2021 %>% 
   select(how_old_are_you, industry, currency,Country,state,city,overall_years_of_professional_experience,years_of_experience_in_field,highest_level_of_education_completed,gender,race,other_monetary_comp,annual_salary) 
 
 ```
 
 ```{r}
+#Clean "state"
+clean_data$state <- gsub("District of Columbia, Virginia", "Virginia", clean_data$state)
+clean_data$state <- gsub("District of Columbia, Maryland", "Maryland", clean_data$state)
+clean_data$state <- gsub("District of Columbia, Washington", "Washington", clean_data$state)
+```
 
+```{r}
+# Use state abbreviations to categorise state entries
 url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States"
 
 # get tables that exist on wikipedia page 
@@ -91,23 +94,51 @@ states_data[46,1] <- "Virginia"
 ```
 
 ```{r}
+# Bind the state abbreviation column in to clean_data
 clean_data <- clean_data %>%
   left_join(states_data, by="state")
 ```
 
 ```{r}
+#Clean "gender"
 clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
 ```
 
 ```{r}
+#Clean "industry
 clean_data$industry <- gsub("Pharmaceuticals", "Pharma", clean_data$industry)
 clean_data$industry <- gsub("Pharmaceutical", "Pharma", clean_data$industry)
-clean_data$industry <- gsub("Libraries", "Library", clean_data$industry)
-clean_data$industry <- gsub("Public Library", "Library", clean_data$industry)
-clean_data$industry <- gsub("Biotech/pharmaceuticals", "Biotech", clean_data$industry)
 clean_data$industry <- gsub("Pharma Development", "Pharma", clean_data$industry)
 clean_data$industry <- gsub("Pharma Manufacturing", "Pharma", clean_data$industry)
 clean_data$industry <- gsub("Pharma/biotechnology", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharma R&D", "Pharma", clean_data$industry)
+
+clean_data$industry <- gsub("Libraries", "Library", clean_data$industry)
+clean_data$industry <- gsub("Public library", "Library", clean_data$industry)
+clean_data$industry <- gsub("Librarian", "Library", clean_data$industry)
+clean_data$industry <- gsub("public library", "Library", clean_data$industry)
+clean_data$industry <- gsub("library", "Library", clean_data$industry)
+
+clean_data$industry <- gsub("Biotech/pharmaceuticals", "Biotech", clean_data$industry)
+clean_data$industry <- gsub("Biotech/Pharma", "Biotech", clean_data$industry)
+clean_data$industry <- gsub("Biotechnology", "Biotech", clean_data$industry)
+
+
+
+clean_data$industry <- gsub("Environmental Consulting", "Environmental", clean_data$industry)
+
+clean_data$industry <- gsub("Scientific Research", "Science", clean_data$industry)
+
+clean_data$industry <- gsub("Law Enforcement & Security", "Law", clean_data$industry)
+
+clean_data$industry <- gsub("Consulting", "Business or Consulting", clean_data$industry)
+clean_data$industry <- gsub("Business or Business or Consulting", "Business or Consulting", clean_data$industry)
+
+clean_data$industry <- gsub("Commercial Real Estate", "Real Estate", clean_data$industry)
+
+clean_data$industry <- gsub("Museums", "Museum", clean_data$industry)
+
+clean_data$industry <- gsub("Oil & Gas", "Oil and Gas", clean_data$industry)
 ```
 
 ```{r}
@@ -116,8 +147,11 @@ temp <- clean_data %>%
   
 temp
 ```
+
 ```{r}
 temp2 <- clean_data[is.na(clean_data$state_abb),]
+temp3 <- clean_data %>% 
+  count(state_abb, sort = TRUE)
 ```
 
 
