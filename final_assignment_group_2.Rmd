@@ -154,6 +154,78 @@ temp3 <- clean_data %>%
   count(state_abb, sort = TRUE)
 ```
 
+```{r}
+#Examining the top cities to clean the data. 
+temp4 <- clean_data %>% 
+  count(city, sort=TRUE) 
+temp4
+```
+
+
+```{r}
+#Clean City Data (clean all cities with n >= 5)
+clean_data$city <- gsub("New York City", "NYC", clean_data$city)
+clean_data$city <- gsub("New York", "NYC", clean_data$city)
+clean_data$city <- gsub("Washington, DC", "DC", clean_data$city)
+clean_data$city <- gsub("Washington", "DC", clean_data$city)
+clean_data$city <- gsub("Washington DC", "DC", clean_data$city)
+clean_data$city <- gsub("DC DC", "DC", clean_data$city)
+clean_data$city <- gsub("DC, D.C.", "DC", clean_data$city)
+clean_data$city <- gsub("Long Beach", "LA", clean_data$city)
+clean_data$city <- gsub("District of Columbia", "DC", clean_data$city)
+clean_data$city <- gsub("Manhattan", "NYC", clean_data$city)
+clean_data$city <- gsub("San Francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("San Francisco Bay Area", "San Fran", clean_data$city)
+clean_data$city <- gsub("new york", "NYC", clean_data$city)
+clean_data$city <- gsub("DC D.C.", "DC", clean_data$city)
+clean_data$city <- gsub("SF Bay Area", "San Fran", clean_data$city)
+clean_data$city <- gsub("New york", "NYC", clean_data$city)
+clean_data$city <- gsub("Vancouver, BC", "Vancouver", clean_data$city)
+clean_data$city <- gsub("Bay Area", "San Fran", clean_data$city)
+clean_data$city <- gsub("Cambridge, MA", "Cambridge", clean_data$city)
+clean_data$city <- gsub("Boston, MA", "Boston", clean_data$city)
+clean_data$city <- gsub("portland", "Portland", clean_data$city)
+clean_data$city <- gsub("Frisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("Chicago suburbs", "Chicago", clean_data$city)
+clean_data$city <- gsub("D.C.", "DC", clean_data$city)
+clean_data$city <- gsub("South San Francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("Chicago Suburbs", "Chicago", clean_data$city)
+clean_data$city <- gsub("NYC, NY", "NYC", clean_data$city)
+clean_data$city <- gsub("Boston area", "Boston", clean_data$city)
+clean_data$city <- gsub("chicago", "Chicago", clean_data$city)
+clean_data$city <- gsub("Los angeles", "LA", clean_data$city)
+clean_data$city <- gsub("Metro Detroit", "Detroit", clean_data$city)
+clean_data$city <- gsub("Newcastle upon Tyne", "Newcastle", clean_data$city)
+clean_data$city <- gsub("Philadelphia suburbs", "Philadelphia", clean_data$city)
+clean_data$city <- gsub("san francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("Ottawa, Ontario", "Ottawa", clean_data$city)
+clean_data$city <- gsub("seattle", "Seattle", clean_data$city)
+clean_data$city <- gsub("Seattle, WA", "Seattle", clean_data$city)
+clean_data$city <- gsub("boston", "Boston", clean_data$city)
+clean_data$city <- gsub("London, UK", "London", clean_data$city)
+clean_data$city <- gsub("Nyc", "NYC", clean_data$city)
+clean_data$city <- gsub("NYC city", "NYC", clean_data$city)
+clean_data$city <- gsub("San francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("atlanta", "Atlanta", clean_data$city)
+clean_data$city <- gsub("Atlanta metro area", "Atlanta", clean_data$city)
+clean_data$city <- gsub("Bronx", "NYC", clean_data$city)
+clean_data$city <- gsub("Boston Area", "Boston", clean_data$city)
+clean_data$city <- gsub("Chicago, IL", "Chicago", clean_data$city)
+clean_data$city <- gsub("Greater Toronto Area", "Toronto", clean_data$city)
+clean_data$city <- gsub("indianapolis", "Indianapolis", clean_data$city)
+clean_data$city <- gsub("los angeles", "LA", clean_data$city)
+clean_data$city <- gsub("NY", "NYC", clean_data$city)
+clean_data$city <- gsub("Santa Monica", "LA", clean_data$city)
+clean_data$city <- gsub("toronto", "Toronto", clean_data$city)
+clean_data$city <- gsub("Vancouver, British Columbia", "Vancouver", clean_data$city)
+clean_data$city <- gsub("St. Louis, MO", "St. Louis", clean_data$city)
+clean_data$city <- gsub("washington", "DC", clean_data$city)
+clean_data$city <- gsub("washington dc", "DC", clean_data$city)
+
+
+```
+
+
 
 
 
