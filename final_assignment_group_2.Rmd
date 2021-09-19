@@ -3,6 +3,15 @@ title: "final_group_2"
 output: html_document
 ---
 
+# Study Group 2 - Final Assignment - Cleaning and Analysing the "Ask a Manager 2021 Survey" Dataset.
+
+
+## Section 1 - Importing and Cleaning the Data 
+
+### Importing the data and relevant libraries
+
+We begin by importing the following libraries to aid our analysis...
+
 ```{r}
 library(googlesheets4)
 library(tidyverse)
@@ -16,11 +25,16 @@ library(countrycode)
 library(rvest)
 ```
 
+
+Next, we use googlesheets4 to gain authorization to the "Ask a Manager 2021 survey" data sheet. 
+
 ```{r}
-# use googlesheets4 to get data
+# Use googlesheets4 to get data
 url <- "https://docs.google.com/spreadsheets/d/1IPS5dBSGtwYVbjsfbaMCYIWnOuRmJcbequohNxCyGVw/edit?resourcekey#gid=1625408792"
 googlesheets4::gs4_auth() # google sheets authorisation
 ```
+
+We subsequently assign the raw data to a new variable (ask_a_manager_2021), which we then skim to view a summary of the data - this includes the size of the dataset, as well as the variable types amongst other information. 
 
 ```{r}
 # load "Ask a A Manager 2021 Survey" googlesheet
@@ -28,10 +42,17 @@ googlesheets4::gs4_auth() # google sheets authorisation
 ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>% 
   janitor::clean_names()
 ```
-
 ```{r}
 skimr::skim(ask_a_manager_2021)
 ```
+
+By analysing n_missing and n_unique, we can gain an insight into which variables will require the most cleaning. For example, variables such as job_title and city have many unique entries - making it likely that these variables will be more difficult to clean. 
+
+
+### Cleaning the Data. 
+
+
+
 ```{r}
 # Clean "country"
 # use countrycode::countryname() to clean country names
