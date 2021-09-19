@@ -6,7 +6,6 @@ output: html_document
 # Study Group 2 - Final Assignment - Cleaning and Analysing the "Ask a Manager 2021 Survey" Dataset.
 
 
-
 ## Section 1 - Importing and Cleaning the Data 
 
 ### Importing the data and relevant libraries
