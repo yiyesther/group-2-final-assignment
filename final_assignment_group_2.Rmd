@@ -6,6 +6,7 @@ output: html_document
 # Study Group 2 - Final Assignment - Cleaning and Analysing the "Ask a Manager 2021 Survey" Dataset.
 
 
+
 ## Section 1 - Importing and Cleaning the Data 
 
 ### Importing the data and relevant libraries
@@ -160,7 +161,7 @@ clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer
 ```
 
 
-The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that futher cleaning of the data will have a negligible effect when comparing the characteristics of the main (most-common) industries. 
+The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most-common) industries. 
 
 ```{r}
 #Clean "industry"
@@ -207,6 +208,8 @@ temp3 <- clean_data %>%
 temp3
 ```
 
+
+The "city" data is also cleaned manually, this is done by grouping repeated names of the same city - for instance "New York", "New York City", "NYC" are all grouped as "NYC". We clean data for all cities that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most lived in) cities. For example - when comparing the average salaries of people who live in New York with those who live in Washington - further cleaning of city data with n < 5 items will not largely impact this comparison.  
 
 
 
@@ -278,6 +281,7 @@ temp4 <- clean_data %>%
   count(city, sort=TRUE) 
 temp4
 ```
+
 
 
 
@@ -409,6 +413,21 @@ ask_a_manager_2021 %>%
   mutate(percent = 100* n/sum(n))%>% 
   arrange(desc(percent))
 ```
+
+
+
+
+## Section 2 - Graphically summarising and exploring the Data.
+
+
+## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
+
+
+## Section 4 - Analysis using Linear Regression
+
+
+## Section 5 - Conclusions and Evaluation
+
 
 
 
