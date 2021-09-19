@@ -51,11 +51,26 @@ By analysing n_missing and n_unique, we can gain an insight into which variables
 
 ### Cleaning the Data. 
 
-We begin by cleaning the "country" variable. This involves using standardised 'countrycode' to convert the countries into a standard, recognisable format. Firstly, we need to alter 
+We begin by cleaning the "country" variable. This involves using standardised 'countrycode' to convert the countries into a standard, recognisable format. 
+
+Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change instances of "England" to "UK". We ignore mispellings, as they only represent a small portion of the data set. 
+
+```{r}
+# Clean specific country names: 
+ask_a_manager_2021$country <- gsub("England", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("Scotland", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("England, UK", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("Northern Ireland", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("Wales", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("U. S.", "USA", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("America", "USA", ask_a_manager_2021$country)
+```
+
+Now that we have completed this, we can apply the country code to standardise the names of the country variables. These can be found in a new column "Country", within the ask_a_manager_2021 data frame. 
 
 ```{r}
 # Clean "country"
-# use countrycode::countryname() to clean country names
+# Use countrycode::countryname() to clean country names
 salary_iso3 <- ask_a_manager_2021 %>% 
   select(country) %>% 
   pull() %>% 
@@ -72,15 +87,18 @@ colnames(ask_a_manager_2021)[19] <- "Country"
 ```
 
 
+Next, we create a new dataframe by selecting the columns (variables) that are most suitable for analysis. For example, this involves omitting the column 'additional_context_on_job_title'. This column contains little information that is appropriate for statistical analysis. 
+
 ```{r}
 #Create a new dataframe for the desired data
 clean_data <- ask_a_manager_2021 %>% 
   select(how_old_are_you, industry, currency,Country,state,city,overall_years_of_professional_experience,years_of_experience_in_field,highest_level_of_education_completed,gender,race,other_monetary_comp,annual_salary) 
-
 ```
 
+We repeat the procedure we used to clean the country data for the states - using a standardised code and correcting for any anomalies that cannot be picked up by this standardisation. 
+
 ```{r}
-#Clean "state"
+#Clean "states" so that they can be recognised by specific state code. 
 clean_data$state <- gsub("District of Columbia, Virginia", "Virginia", clean_data$state)
 clean_data$state <- gsub("District of Columbia, Maryland", "Maryland", clean_data$state)
 clean_data$state <- gsub("District of Columbia, Washington", "Washington", clean_data$state)
@@ -94,7 +112,6 @@ url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_Unit
 tables <- url %>% 
   read_html() %>% 
   html_nodes(css="table")
-
 
 # parse HTML tables into a dataframe called polls 
 # Use purr::map() to create a list of all tables in URL
