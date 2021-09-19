@@ -104,6 +104,8 @@ clean_data$state <- gsub("District of Columbia, Maryland", "Maryland", clean_dat
 clean_data$state <- gsub("District of Columbia, Washington", "Washington", clean_data$state)
 ```
 
+The state names are standardised as follows, using the abbreviations taken from the following wikipedia page. 
+
 ```{r}
 # Use state abbreviations to categorise state entries
 url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States"
@@ -131,19 +133,27 @@ states_data[46,1] <- "Virginia"
   
 ```
 
+
+The cleaned state variable is joined to the 'clean_data' data frame. 
+
 ```{r}
 # Bind the state abbreviation column in to clean_data
 clean_data <- clean_data %>%
   left_join(states_data, by="state")
 ```
 
+The gender variable is cleaned by adding entries with "Prefer not to answer" to the "Other or prefer not to answer" group. 
+
 ```{r}
 #Clean "gender"
 clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
 ```
 
+
+The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that futher cleaning of the data will have a negligable effect when comparing the characteristics of the main (most-common) industries. 
+
 ```{r}
-#Clean "industry
+#Clean "industry"
 clean_data$industry <- gsub("Pharmaceuticals", "Pharma", clean_data$industry)
 clean_data$industry <- gsub("Pharmaceutical", "Pharma", clean_data$industry)
 clean_data$industry <- gsub("Pharma Development", "Pharma", clean_data$industry)
@@ -161,8 +171,6 @@ clean_data$industry <- gsub("Biotech/pharmaceuticals", "Biotech", clean_data$ind
 clean_data$industry <- gsub("Biotech/Pharma", "Biotech", clean_data$industry)
 clean_data$industry <- gsub("Biotechnology", "Biotech", clean_data$industry)
 
-
-
 clean_data$industry <- gsub("Environmental Consulting", "Environmental", clean_data$industry)
 
 clean_data$industry <- gsub("Scientific Research", "Science", clean_data$industry)
@@ -177,12 +185,14 @@ clean_data$industry <- gsub("Commercial Real Estate", "Real Estate", clean_data$
 clean_data$industry <- gsub("Museums", "Museum", clean_data$industry)
 
 clean_data$industry <- gsub("Oil & Gas", "Oil and Gas", clean_data$industry)
+
+clean_data$industry <- gsub("manufacturing", "Manufacturing", clean_data$industry)
+
 ```
 
 ```{r}
 temp <- clean_data %>% 
   count(industry, sort=TRUE) 
-  
 temp
 ```
 
@@ -259,8 +269,6 @@ clean_data$city <- gsub("Vancouver, British Columbia", "Vancouver", clean_data$c
 clean_data$city <- gsub("St. Louis, MO", "St. Louis", clean_data$city)
 clean_data$city <- gsub("washington", "DC", clean_data$city)
 clean_data$city <- gsub("washington dc", "DC", clean_data$city)
-
-
 ```
 
 
