@@ -24,6 +24,8 @@ library(car)
 library(ggfortify)
 library(countrycode)
 library(rvest)
+library(quantmod)
+
 ```
 
 
@@ -273,6 +275,58 @@ clean_data$city <- gsub("St. Louis, MO", "St. Louis", clean_data$city)
 clean_data$city <- gsub("washington", "DC", clean_data$city)
 clean_data$city <- gsub("washington dc", "DC", clean_data$city)
 ```
+
+
+Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some poeple also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
+
+```{r}
+clean_data <- clean_data %>% 
+  filter(clean_data$currency != "Other") #remove 'other' currencies
+
+#make AUD and NZD same currency
+clean_data$currency[clean_data$currency == "AUD/NZD"] <- "AUD"
+
+#convert list type to numeric for other_monetary_comp
+clean_data$other_monetary_comp <- gsub("NULL", "0", clean_data$other_monetary_comp)
+
+clean_data$other_monetary_comp <-
+  as.numeric(unlist(clean_data$other_monetary_comp))
+
+glimpse(clean_data)
+
+#clean other_compensation and add it to total compensation
+clean_data <- clean_data %>% 
+  mutate(other_compensation = case_when( 
+                                        is.na(other_monetary_comp)~0,
+                                        T~other_monetary_comp))
+clean_data <- clean_data %>% 
+  mutate(total_earnings = other_compensation + annual_salary)
+```
+
+Now we will fetch the most recent exchange rates and create a table with them.
+```{r}
+#get live exchange rates
+from <- c(currency_corrected$currency)
+to <- c("USD")
+quotes <- getQuote(paste0(from, to, "=X"))[2]
+#add column with currency names
+quotes <- quotes %>% 
+  mutate(currency = c("USD", "GBP", "CAD", "EUR", "AUD", "CHF", "ZAR", "SEK", "HKD", "JPY"))
+```
+
+Left join the two tables
+```{r}
+clean_data <- clean_data %>% 
+  left_join(quotes, by="currency") #join quotes table with bigger table according to the currency
+```
+
+Multiply the total earnings by the exchange rate
+```{r}
+clean_data <- clean_data %>% 
+  mutate(tot_earnings_USD = total_earnings*Last) 
+```
+
+
 
 
 ```{r}
