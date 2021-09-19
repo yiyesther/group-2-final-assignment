@@ -309,6 +309,7 @@ clean_data <- clean_data %>%
 ```
 
 Now we will fetch the most recent exchange rates and create a table with them.
+
 ```{r}
 #get live exchange rates
 from <- c(currency_corrected$currency)
@@ -319,14 +320,16 @@ quotes <- quotes %>%
   mutate(currency = c("USD", "GBP", "CAD", "EUR", "AUD", "CHF", "ZAR", "SEK", "HKD", "JPY"))
 ```
 
-Left join the two tables
+We subsequently left join the two tables...
+
 ```{r}
 #join quotes table with bigger table according to the currency
 clean_data <- clean_data %>% 
   left_join(quotes, by="currency") 
 ```
 
-Multiply the total earnings by the exchange rate to get the currency-converted total earnings in USD
+... and multiply the total earnings by the exchange rate to get the currency-converted total earnings in USD.
+
 ```{r}
 clean_data <- clean_data %>% 
   mutate(tot_earnings_USD = total_earnings*Last) 
@@ -340,34 +343,14 @@ temp5
 ```
 
 
+At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. 
 
 
 
 
-```{r}
-# How is salary distributed?
-
-ggplot(ask_a_manager_2021, aes(x=annual_salary))+
-  geom_density()
 
 
-ggplot(ask_a_manager_2021, aes(x=annual_salary))+
-  stat_ecdf()
-```
-
-```{r}
-# what about log(salary)? 
-ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
-  geom_density()
-
-
-ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
-  stat_ecdf()
-```
-
-```{r}
-# Which one (salary vs. log(salary)) is better to use in a regression model? Why?
-```
+## Section 2 - Graphically summarising and exploring the Data.
 
 ```{r}
 # Some quick counts, groups, etc
@@ -402,18 +385,6 @@ ask_a_manager_2021 %>%
 
 ```
 
-```{r}
-# use countrycode::countryname() to clean country names
-salary_iso3 <- ask_a_manager_2021 %>% 
-  select(country) %>% 
-  pull() %>% 
-  countrycode(
-    origin = "country.name",
-    destination = "iso3c") %>% 
-  as_tibble()
-
-ask_a_manager_2021 <- bind_cols(ask_a_manager_2021, salary_iso3)
-```
 
 ```{r}
 dataframe1 <- 
@@ -472,9 +443,6 @@ ask_a_manager_2021 %>%
 ```
 
 
-
-
-## Section 2 - Graphically summarising and exploring the Data.
 
 
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
@@ -614,6 +582,34 @@ We can see that the $|t-stat| < 2$ and $|p-value| > 0.05$. We still cannot rejec
 
 
 ## Section 4 - Analysis using Correlation and Linear Regression
+
+
+Delete the chunks below if you want to... 
+```{r}
+# How is salary distributed?
+
+ggplot(ask_a_manager_2021, aes(x=annual_salary))+
+  geom_density()
+
+
+ggplot(ask_a_manager_2021, aes(x=annual_salary))+
+  stat_ecdf()
+```
+
+```{r}
+# what about log(salary)? 
+ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
+  geom_density()
+
+
+ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
+  stat_ecdf()
+```
+
+```{r}
+# Which one (salary vs. log(salary)) is better to use in a regression model? Why?
+```
+
 
 
 ## Section 5 - Conclusions and Evaluation
