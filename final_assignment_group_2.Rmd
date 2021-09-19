@@ -6,7 +6,6 @@ output: html_document
 # Study Group 2 - Final Assignment - Cleaning and Analysing the "Ask a Manager 2021 Survey" Dataset.
 
 
-
 ## Section 1 - Importing and Cleaning the Data 
 
 ### Importing the data and relevant libraries
@@ -312,7 +311,7 @@ Now we will fetch the most recent exchange rates and create a table with them.
 
 ```{r}
 #get live exchange rates
-from <- c(currency_corrected$currency)
+from <- c(clean_data$currency)
 to <- c("USD")
 quotes <- getQuote(paste0(from, to, "=X"))[2]
 #add column with currency names
@@ -343,7 +342,14 @@ temp5
 ```
 
 
-At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. 
+At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. Finally, we omit the unnecessary variables: 
+
+```{r}
+clean_data <- clean_data %>% 
+  select(how_old_are_you, industry, currency, Country, state_abb, city, overall_years_of_professional_experience, years_of_experience_in_field, highest_level_of_education_completed, gender, race, annual_salary ,tot_earnings_USD) 
+```
+
+
 
 
 
