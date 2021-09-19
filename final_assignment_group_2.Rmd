@@ -340,7 +340,7 @@ ask_a_manager_2021 %>%
 ```{r}
 # 'country' 
 ask_a_manager_2021 %>% 
-  count(country, sort=TRUE) %>% 
+  count(Country, sort=TRUE) %>% 
   mutate(percent = 100* n/sum(n))
 
 ```
