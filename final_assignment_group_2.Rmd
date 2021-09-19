@@ -479,9 +479,36 @@ ask_a_manager_2021 %>%
 
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
 
-### Do UK people in the age group 18-24 earn less than those in age group 25-34?
+### Gender pay inequality in UK
+First, let's look at the gender pay gap within UK for each age groups.
 
-In this case, our null hypothesis is that the medians of earnings between age group 18-24 and 25-34 are the same. 
+```{r}
+#prepare dataframe for comparison
+pay_gender_uk <- clean_data %>% 
+  filter(Country == "GBR") %>% 
+  select(how_old_are_you, gender, tot_earnings_USD) %>% 
+  filter(gender=="Woman" | gender=="Man") %>% 
+  group_by(how_old_are_you, gender) %>% 
+  summarise(median_pay = median(tot_earnings_USD)) %>% 
+  pivot_wider(names_from = gender, 
+              values_from = median_pay) %>% 
+  mutate(pay_gap = Man - Woman)
+
+pay_gender_uk %>% 
+  ggplot(aes(x=how_old_are_you, y=pay_gap, fill=how_old_are_you)) +
+  geom_col() +
+  labs(title="Gender pay gap within UK for each age groups",
+       x="Age group",
+       y="Pay gap (men's - women's)",
+       fill="Age group")
+```
+The graph exhibits that men earns more than women across all age groups. This is probably because of the fact that males take more senior roles than females as these jobs is highly associated with high working hours, which has been shown to be inherently gendered ([Gascoigne et al. 2015](https://journals.sagepub.com/doi/abs/10.1177/1350508415572511)). 
+
+And it seems that from 18-44, as people grow older, the gender pay gap becomes more significant. This is probably because that women take up more caring responsibilities for children and have more part-time jobs as they grow older. The gender pay gap is relatively small for the age group 18-24. This is probably because nowdays women receive similar education and enter similar early career as men. But is it statistically significant? We will look at the following.  
+
+### Do UK men earn **statistically** more than women in **age group 18-24**?
+
+In this case, our null hypothesis is that the medians of earnings between man and woman are the same. 
 
 $H_0: \tilde{x_1} = \tilde{x_2}$
 
@@ -489,11 +516,11 @@ First, let's produce and take a look at the density chart.
 ```{r ci_hypothesis_age_salary}
 #prepare dataframe for comparison
 salary_gender_uk <- clean_data %>% 
-  filter(Country == "GBR" & how_old_are_you=="25-34") %>% 
+  filter(Country == "GBR" & how_old_are_you=="18-24") %>% 
   select(how_old_are_you, gender, tot_earnings_USD) %>% 
   filter(gender=="Woman" | gender=="Man")
 
-#add index column for each of the rows and take log for salary
+#add index column for each of the rows and take log for earnings
 salary_gender_uk$ID <- seq.int(nrow(salary_gender_uk))
 salary_gender_uk <- salary_gender_uk %>% 
   mutate(tot_earnings_USD_log = log(tot_earnings_USD))
@@ -515,25 +542,25 @@ median_man <- salary_gender_uk_wider %>%
   
 #make mirror density chart
 salary_gender_uk_wider %>% ggplot(aes(x=x) ) +
-  # Top for age group 25-34
+  # Top for woman
   geom_density(aes(x = Woman, y = ..density..), fill="#69b3a2", alpha = 0.3) +
   geom_label( aes(x=4.5, y=0.25, label="Woman"), color="#69b3a2") +
   
-  # Bottom for age group 35-44
+  # Bottom for man
   geom_density( aes(x = Man, y = -..density..), fill= "#404080", alpha = 0.3) +
   geom_label( aes(x=4.5, y=-0.25, label="Man"), color="#404080") +
   
   #Add median point for both gender groups
   geom_point(aes(x=median_woman, y=0.01), size=1.5, colour="#69b3a2")+
   geom_point(aes(x=median_man, y=-0.01), size=1.5, colour="#404080")+
-  labs(title = "Mirror density plot of the two gender groups in UK",x = "Log of salary", y = "Density")
+  labs(title = "Mirror density plot of the two gender groups in age 18-24 in UK",x = "Log of salary", y = "Density")
 
 ```
 
-We can see from the mirror density chart above that the density chart for age group 18-24 is more left-skewed than that for age group 25-34. And the median of salary for age group 25-34 is higher. However, is it statistically significant? Let's produce and look at the confidence intervals plot. 
+We can see from the mirror density chart above that the density chart for man is more left-skewed than that for woman. And the median of salary for man is higher. However, is it statistically significant? Let's produce and look at the confidence intervals plot. 
 
 ```{r ci_hypothesis_age_salary}
-#calculate the 18-24 and 25-34 age group confidence intervals
+#calculate man and woman confidence intervals for the age group 18-24
 salary_gender_comparison <- salary_gender_uk %>% 
   group_by(gender) %>% 
   summarise(median_salary = median(tot_earnings_USD_log),
@@ -555,40 +582,38 @@ salary_gender_comparison %>%
   geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
   geom_point(aes(x=median_salary, y=gender), size=3)+
   geom_text(aes(label=round(median_salary, digits=2)), vjust = -1.5)+
-  labs(title="Do UK people aged 18-24 earn more than those aged 25-34?",
-       subtitle = "95% confidence intervals do not overlap",
+  labs(title="Do UK man aged 18-24 earn more than woman in the same age group?",
+       subtitle = "95% confidence intervals overlap",
        x = "Median log of annual earnings",
        y = "Age group",
        color="Age group")
 ```
 
-From the graph we can see that the confidence intervals doesn't overlap. This way we can reject the null hypotheses $H_0$ and conclude that we are 95% confident that these two age groups do not have the same median earnings.  And it can be inferred from the graph that UK people aged between 25-34 earns significantly higher than those in age group 18-24. 
+From the graph we can see that the confidence intervals doesn't overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
+
+```{r}
+#calculate the t-stats for gender pay gap in the age group of 18-24
+t.test(tot_earnings_USD_log ~ gender, data = salary_gender_uk)
+```
+
+We can see that the $|t-stat| < 2$ and $|p-value| > 0.05$. We still cannot reject the null hypothesis $H_0$ and therefore UK males aged between 18-24 do not earn significantly higher than women in the same age group. 
 
 
 
 ```{r}
 #make violin plot
-salary_age %>% 
-  ggplot(aes(x=how_old_are_you, 
-             y=log(tot_earnings_USD), 
-             color=how_old_are_you)) + 
-  geom_violin()+
-  geom_boxplot(width=0.1)+
-  stat_summary(fun.y=median, geom="point", size=2, color="red")
-```
-
-
-```{r ci_hypothesis_age_salary}
-#exclude outliers in the dataset
-
+#salary_age %>% 
+ # ggplot(aes(x=how_old_are_you, 
+             #y=log(tot_earnings_USD), 
+             #color=how_old_are_you)) + 
+  #geom_violin()+
+  #geom_boxplot(width=0.1)+
+  #stat_summary(fun.y=median, geom="point", size=2, color="red")
 ```
 
 
 
-
-
-
-## Section 4 - Analysis using Linear Regression
+## Section 4 - Analysis using Correlation and Linear Regression
 
 
 ## Section 5 - Conclusions and Evaluation
