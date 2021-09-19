@@ -57,7 +57,7 @@ We begin by cleaning the "country" variable. This involves using standardised 'c
 Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change instances of "England" to "UK". We ignore mispellings, as they only represent a small portion of the data set. 
 
 ```{r}
-# Clean specific country names: 
+# Clean specific country names so that they can be recognised by iso3 countrycode. 
 ask_a_manager_2021$country <- gsub("England", "UK", ask_a_manager_2021$country)
 ask_a_manager_2021$country <- gsub("Scotland", "UK", ask_a_manager_2021$country)
 ask_a_manager_2021$country <- gsub("England, UK", "UK", ask_a_manager_2021$country)
@@ -421,6 +421,40 @@ ask_a_manager_2021 %>%
 
 
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
+
+### Do people in the age group 35-44 earn more than those in age group 25-34?
+```{r ci_hypothesis_age_salary}
+#calculate the 25-34 and 35-44 age group confidence intervals
+salary_age_comparison <- clean_data %>% 
+  #filter(how_old_are_you=="25-34" | how_old_are_you=="35-44") %>% 
+  group_by(how_old_are_you) %>% 
+  summarise(avg_salary = mean(annual_salary),
+            sd_salary = sd(annual_salary, na.rm=TRUE),
+            count_salary = n(),
+            se_salary = sd_salary / sqrt(count_salary),
+            ci_salary_up = avg_salary + qt(.975, count_salary-1)*se_salary,
+            ci_salary_dw = avg_salary - qt(.975, count_salary-1)*se_salary
+            )
+
+#plot the confidence intervals
+salary_age_comparison %>% 
+  ggplot(aes(x=avg_salary, y=how_old_are_you, color=how_old_are_you))+
+    geom_rect(fill="grey",alpha=0.5, color = "grey",
+            aes(xmin=max(ci_salary_dw),
+                xmax=min(ci_salary_up),
+                ymin=-Inf,
+                ymax=Inf))+
+  geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
+  geom_point(aes(x=avg_salary, y=how_old_are_you), size=3)+
+  geom_text(aes(label=round(avg_salary, digits=2)), vjust = -1.5)+
+  labs(title="Do middle-aged people earn more than young people?",
+       subtitle = "95% confidence intervals overlap",
+       x = "Mean annual salary",
+       y = "Age group")
+
+```
+
+
 
 
 ## Section 4 - Analysis using Linear Regression
