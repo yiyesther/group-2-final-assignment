@@ -276,6 +276,12 @@ clean_data$city <- gsub("washington", "DC", clean_data$city)
 clean_data$city <- gsub("washington dc", "DC", clean_data$city)
 ```
 
+```{r}
+#Examining the top cities to ensure the data has been cleaned sufficiently.  
+temp4 <- clean_data %>% 
+  count(city, sort=TRUE) 
+temp4
+```
 
 Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some poeple also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
 
