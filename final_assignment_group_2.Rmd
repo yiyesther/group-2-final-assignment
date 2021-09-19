@@ -332,12 +332,11 @@ clean_data <- clean_data %>%
   mutate(tot_earnings_USD = total_earnings*Last) 
 ```
 
-
 ```{r}
-#Examining the top cities to ensure the data has been cleaned sufficiently.  
-temp4 <- clean_data %>% 
-  count(city, sort=TRUE) 
-temp4
+#Examining the top currencies to ensure the data has been cleaned sufficiently.
+temp5 <- clean_data %>% 
+  count(currency, sort=TRUE) 
+temp5
 ```
 
 
@@ -480,37 +479,111 @@ ask_a_manager_2021 %>%
 
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
 
-### Do people in the age group 35-44 earn more than those in age group 25-34?
+### Do UK people in the age group 18-24 earn less than those in age group 25-34?
+
+In this case, our null hypothesis is that the medians of earnings between age group 18-24 and 25-34 are the same. 
+
+$H_0: \tilde{x_1} = \tilde{x_2}$
+
+First, let's produce and take a look at the density chart. 
 ```{r ci_hypothesis_age_salary}
-#calculate the 25-34 and 35-44 age group confidence intervals
-salary_age_comparison <- clean_data %>% 
-  #filter(how_old_are_you=="25-34" | how_old_are_you=="35-44") %>% 
-  group_by(how_old_are_you) %>% 
-  summarise(avg_salary = mean(annual_salary),
-            sd_salary = sd(annual_salary, na.rm=TRUE),
+#prepare dataframe for comparison
+salary_gender_uk <- clean_data %>% 
+  filter(Country == "GBR" & how_old_are_you=="25-34") %>% 
+  select(how_old_are_you, gender, tot_earnings_USD) %>% 
+  filter(gender=="Woman" | gender=="Man")
+
+#add index column for each of the rows and take log for salary
+salary_gender_uk$ID <- seq.int(nrow(salary_gender_uk))
+salary_gender_uk <- salary_gender_uk %>% 
+  mutate(tot_earnings_USD_log = log(tot_earnings_USD))
+
+#prepare gender comparison by converting long table to wide table
+salary_gender_uk_wider <- salary_gender_uk %>% 
+  pivot_wider(names_from = gender, 
+              values_from = tot_earnings_USD_log)
+
+#calculate the median for each of the gender group
+median_woman <- salary_gender_uk_wider %>% 
+  filter(!is.na(Woman)) %>% 
+  pull(Woman) %>% 
+  median()
+median_man <- salary_gender_uk_wider %>% 
+  filter(!is.na(Man)) %>% 
+  pull(Man) %>% 
+  median()
+  
+#make mirror density chart
+salary_gender_uk_wider %>% ggplot(aes(x=x) ) +
+  # Top for age group 25-34
+  geom_density(aes(x = Woman, y = ..density..), fill="#69b3a2", alpha = 0.3) +
+  geom_label( aes(x=4.5, y=0.25, label="Woman"), color="#69b3a2") +
+  
+  # Bottom for age group 35-44
+  geom_density( aes(x = Man, y = -..density..), fill= "#404080", alpha = 0.3) +
+  geom_label( aes(x=4.5, y=-0.25, label="Man"), color="#404080") +
+  
+  #Add median point for both gender groups
+  geom_point(aes(x=median_woman, y=0.01), size=1.5, colour="#69b3a2")+
+  geom_point(aes(x=median_man, y=-0.01), size=1.5, colour="#404080")+
+  labs(title = "Mirror density plot of the two gender groups in UK",x = "Log of salary", y = "Density")
+
+```
+
+We can see from the mirror density chart above that the density chart for age group 18-24 is more left-skewed than that for age group 25-34. And the median of salary for age group 25-34 is higher. However, is it statistically significant? Let's produce and look at the confidence intervals plot. 
+
+```{r ci_hypothesis_age_salary}
+#calculate the 18-24 and 25-34 age group confidence intervals
+salary_gender_comparison <- salary_gender_uk %>% 
+  group_by(gender) %>% 
+  summarise(median_salary = median(tot_earnings_USD_log),
+            sd_salary = sd(tot_earnings_USD_log, na.rm=TRUE),
             count_salary = n(),
             se_salary = sd_salary / sqrt(count_salary),
-            ci_salary_up = avg_salary + qt(.975, count_salary-1)*se_salary,
-            ci_salary_dw = avg_salary - qt(.975, count_salary-1)*se_salary
+            ci_salary_up = median_salary + qt(.975, count_salary-1)*se_salary,
+            ci_salary_dw = median_salary - qt(.975, count_salary-1)*se_salary
             )
 
-#plot the confidence intervals
-salary_age_comparison %>% 
-  ggplot(aes(x=avg_salary, y=how_old_are_you, color=how_old_are_you))+
+#plot the confidence intervals in a graph
+salary_gender_comparison %>% 
+  ggplot(aes(x=median_salary, y=gender, color=gender))+
     geom_rect(fill="grey",alpha=0.5, color = "grey",
             aes(xmin=max(ci_salary_dw),
                 xmax=min(ci_salary_up),
                 ymin=-Inf,
                 ymax=Inf))+
   geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
-  geom_point(aes(x=avg_salary, y=how_old_are_you), size=3)+
-  geom_text(aes(label=round(avg_salary, digits=2)), vjust = -1.5)+
-  labs(title="Do middle-aged people earn more than young people?",
-       subtitle = "95% confidence intervals overlap",
-       x = "Mean annual salary",
-       y = "Age group")
+  geom_point(aes(x=median_salary, y=gender), size=3)+
+  geom_text(aes(label=round(median_salary, digits=2)), vjust = -1.5)+
+  labs(title="Do UK people aged 18-24 earn more than those aged 25-34?",
+       subtitle = "95% confidence intervals do not overlap",
+       x = "Median log of annual earnings",
+       y = "Age group",
+       color="Age group")
+```
+
+From the graph we can see that the confidence intervals doesn't overlap. This way we can reject the null hypotheses $H_0$ and conclude that we are 95% confident that these two age groups do not have the same median earnings.  And it can be inferred from the graph that UK people aged between 25-34 earns significantly higher than those in age group 18-24. 
+
+
+
+```{r}
+#make violin plot
+salary_age %>% 
+  ggplot(aes(x=how_old_are_you, 
+             y=log(tot_earnings_USD), 
+             color=how_old_are_you)) + 
+  geom_violin()+
+  geom_boxplot(width=0.1)+
+  stat_summary(fun.y=median, geom="point", size=2, color="red")
+```
+
+
+```{r ci_hypothesis_age_salary}
+#exclude outliers in the dataset
 
 ```
+
+
 
 
 
