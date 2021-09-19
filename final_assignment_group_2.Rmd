@@ -51,7 +51,7 @@ By analysing n_missing and n_unique, we can gain an insight into which variables
 
 ### Cleaning the Data. 
 
-
+We begin by cleaning the "country" variable. This involves using standardised 'countrycode' to convert the countries into a standard, recognisable format. Firstly, we need to alter 
 
 ```{r}
 # Clean "country"
