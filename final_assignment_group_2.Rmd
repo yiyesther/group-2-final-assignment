@@ -447,7 +447,7 @@ ask_a_manager_2021 %>%
 
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
 
-### Gender pay inequality in UK
+### Section 3.1 Gender pay inequality accross age groups in UK
 First, let's look at the gender pay gap within UK for each age groups.
 
 ```{r}
@@ -472,13 +472,45 @@ pay_gender_uk %>%
 ```
 The graph exhibits that men earns more than women across all age groups. This is probably because of the fact that males take more senior roles than females as these jobs is highly associated with high working hours, which has been shown to be inherently gendered ([Gascoigne et al. 2015](https://journals.sagepub.com/doi/abs/10.1177/1350508415572511)). 
 
-And it seems that from 18-44, as people grow older, the gender pay gap becomes more significant. This is probably because that women take up more caring responsibilities for children and have more part-time jobs as they grow older. The gender pay gap is relatively small for the age group 18-24. This is probably because nowdays women receive similar education and enter similar early career as men. But is it statistically significant? We will look at the following.  
+And it seems that throughout the lifetime, as people grow older, the gender pay gap becomes more significant except for age group 45-54. 
+- The gender pay gap is relatively small for the age group 18-24.
+- The gap continues to increase. This is probably because that women take up more caring responsibilities for children and have more part-time jobs as they grow older. However, we 
+- For age group 45-54, the result seems to be unexpected, therefore we look a bit further as follows.
 
-### Do UK men earn **statistically** more than women in **age group 18-24**?
+```{r}
+#prepare the dataframe for the violin plot
+var_gender_uk <- clean_data %>% 
+  filter(Country == "GBR") %>% 
+  select(how_old_are_you, gender, tot_earnings_USD) %>% 
+  filter(gender=="Woman" | gender=="Man") %>% 
+  mutate(tot_earnings_USD_log = log(tot_earnings_USD))
 
-In this case, our null hypothesis is that the medians of earnings between man and woman are the same. 
+#make violin plot
+var_gender_uk %>% 
+  ggplot(aes(x=how_old_are_you, 
+             y=tot_earnings_USD_log, 
+             color=how_old_are_you)) + 
+  geom_violin()+
+  geom_boxplot(width=0.1)+
+  stat_summary(fun.y=median, geom="point", size=2, color="red") +
+  stat_summary(aes(y = tot_earnings_USD_log,group=1), fun.y=median, colour="red", geom="line",group=1) +
+  facet_wrap(~gender) +
+  theme(legend.position="bottom") +
+  labs(title = "Violin plot for salary in each age group for each gender",
+       x = "Age group",
+       y = "Total earnings",
+       color = "Age group")
+```
 
-$H_0: \tilde{x_1} = \tilde{x_2}$
+Based on the violin plot, we can see that for men, they reach their peak earning ability during age 35-44, and they earn more or less the same throughout years until they reach 60s, when their earning begins to slide down. Whereas women reach theirs during age 45-54, and immediately slide down in the coming age group. This pattern explains why we got the somewhat unexpected result from the previous plot for age 45-54. 
+
+The gender pay gap is relatively small for the age group 18-24. This is probably because nowdays women receive similar education and enter similar early career as men. But is it statistically significant? We will look at the following.  
+
+#### Do UK men earn **statistically** more than women in **age group 18-24**?
+
+In this case, our null hypothesis is that the mean of earnings between man and woman are the same. 
+
+$H_0: \overline{x_1} = \overline{x_2}$
 
 First, let's produce and take a look at the density chart. 
 ```{r ci_hypothesis_age_salary}
@@ -525,39 +557,39 @@ salary_gender_uk_wider %>% ggplot(aes(x=x) ) +
 
 ```
 
-We can see from the mirror density chart above that the density chart for man is more left-skewed than that for woman. And the median of salary for man is higher. However, is it statistically significant? Let's produce and look at the confidence intervals plot. 
+We can see from the mirror density chart above that the density chart for man is more left-skewed than that for woman. And the median of salary for man is higher. However, is it statistically significant that on average, men earn more than women in this age group? Let's produce and look at the confidence intervals plot. 
 
 ```{r ci_hypothesis_age_salary}
 #calculate man and woman confidence intervals for the age group 18-24
 salary_gender_comparison <- salary_gender_uk %>% 
   group_by(gender) %>% 
-  summarise(median_salary = median(tot_earnings_USD_log),
+  summarise(mean_salary = mean(tot_earnings_USD_log),
             sd_salary = sd(tot_earnings_USD_log, na.rm=TRUE),
             count_salary = n(),
             se_salary = sd_salary / sqrt(count_salary),
-            ci_salary_up = median_salary + qt(.975, count_salary-1)*se_salary,
-            ci_salary_dw = median_salary - qt(.975, count_salary-1)*se_salary
+            ci_salary_up = mean_salary + qt(.975, count_salary-1)*se_salary,
+            ci_salary_dw = mean_salary - qt(.975, count_salary-1)*se_salary
             )
 
 #plot the confidence intervals in a graph
 salary_gender_comparison %>% 
-  ggplot(aes(x=median_salary, y=gender, color=gender))+
+  ggplot(aes(x=mean_salary, y=gender, color=gender))+
     geom_rect(fill="grey",alpha=0.5, color = "grey",
             aes(xmin=max(ci_salary_dw),
                 xmax=min(ci_salary_up),
                 ymin=-Inf,
                 ymax=Inf))+
   geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
-  geom_point(aes(x=median_salary, y=gender), size=3)+
-  geom_text(aes(label=round(median_salary, digits=2)), vjust = -1.5)+
+  geom_point(aes(x=mean_salary, y=gender), size=3)+
+  geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
   labs(title="Do UK man aged 18-24 earn more than woman in the same age group?",
        subtitle = "95% confidence intervals overlap",
-       x = "Median log of annual earnings",
-       y = "Age group",
-       color="Age group")
+       x = "Mean log of annual earnings",
+       y = "Gender",
+       color="Gender")
 ```
 
-From the graph we can see that the confidence intervals doesn't overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
+From the graph we can see that the confidence intervals overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
 
 ```{r}
 #calculate the t-stats for gender pay gap in the age group of 18-24
@@ -566,20 +598,98 @@ t.test(tot_earnings_USD_log ~ gender, data = salary_gender_uk)
 
 We can see that the $|t-stat| < 2$ and $|p-value| > 0.05$. We still cannot reject the null hypothesis $H_0$ and therefore UK males aged between 18-24 do not earn significantly higher than women in the same age group. 
 
-
+### Section 3.2 Gender pay inequality across industries in US
 
 ```{r}
-#make violin plot
-#salary_age %>% 
- # ggplot(aes(x=how_old_are_you, 
-             #y=log(tot_earnings_USD), 
-             #color=how_old_are_you)) + 
-  #geom_violin()+
-  #geom_boxplot(width=0.1)+
-  #stat_summary(fun.y=median, geom="point", size=2, color="red")
+#top 10 industries in UK
+top_10_industry <- clean_data %>% 
+  filter(Country == "USA") %>% 
+  group_by(industry) %>% 
+  count() %>% 
+  arrange(-n) %>% 
+  head(30) %>% 
+  select(industry)
+
+#prepare dataframe for comparison
+top_10_clean_data <- top_10_industry %>% 
+  left_join(clean_data, by="industry") %>% 
+  filter(Country == "USA") %>% 
+  filter(gender == "Man" | gender == "Woman") %>% 
+  mutate(tot_earnings_USD_log = log(tot_earnings_USD)) %>% 
+  filter(tot_earnings_USD_log>0)
+
+pay_industry_uk <- top_10_clean_data %>% 
+  select(industry, gender, tot_earnings_USD_log) %>% 
+  group_by(industry, gender) %>% 
+  summarise(mean_pay = mean(tot_earnings_USD_log)) %>% 
+  pivot_wider(names_from = gender, 
+              values_from = mean_pay) %>% 
+  mutate(pay_gap = Woman - Man) %>% 
+  #select the industries where women earn more than men
+  filter(pay_gap > 0)
+
+#plot the graph
+pay_industry_uk %>% 
+  ggplot(aes(x=reorder(industry,pay_gap), y=pay_gap, fill=industry)) +
+  geom_col() +
+  labs(title="Industries where women are paid more than men",
+       x="Industry",
+       y="Pay gap (women's - men's)",
+       fill="Industry") +
+  theme(legend.position="bottom") +
+  coord_flip()
 ```
 
+Based on the graph, we can see that in the **"Publishing"** industry, the pay gap is the most significant among top industries where most people work in. But is it statistically significant? Let's look at the following. 
 
+#### Do UK men earn **statistically** more than women in **Publishing** sector?
+
+In this case, our null hypothesis is that the mean of earnings between man and woman are the same. 
+
+$H_0: \overline{x_1} = \overline{x_2}$
+
+```{r ci_hypothesis_age_salary}
+#calculate the log
+mkt_gender_uk <- top_10_clean_data %>% 
+  filter(industry == "Publishing") 
+
+#calculate man and woman confidence intervals for the age group 18-24
+ci_mkt_gender_uk <- mkt_gender_uk %>% 
+  group_by(gender) %>% 
+  summarise(mean_salary = mean(tot_earnings_USD_log),
+            sd_salary = sd(tot_earnings_USD_log, na.rm=TRUE),
+            count_salary = n(),
+            se_salary = sd_salary / sqrt(count_salary),
+            ci_salary_up = mean_salary + qt(.975, count_salary-1)*se_salary,
+            ci_salary_dw = mean_salary - qt(.975, count_salary-1)*se_salary
+            )
+
+#plot the confidence intervals in a graph
+ci_mkt_gender_uk %>% 
+  ggplot(aes(x=mean_salary, y=gender, color=gender))+
+    geom_rect(fill="grey",alpha=0.5, color = "grey",
+            aes(xmin=max(ci_salary_dw),
+                xmax=min(ci_salary_up),
+                ymin=-Inf,
+                ymax=Inf))+
+  geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
+  geom_point(aes(x=mean_salary, y=gender), size=3)+
+  geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
+  labs(title="Do UK women earn more than men in the Marketing, Advertising & PR sector?",
+       subtitle = "95% confidence intervals overlap",
+       x = "Mean log of annual earnings",
+       y = "Gender",
+       color="Gender")
+```
+
+From the graph we can see that the confidence intervals overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
+
+```{r}
+#calculate the t-stats for gender pay gap in the hospitality and events industry
+t.test(tot_earnings_USD_log ~ gender, data = mkt_gender_uk)
+```
+
+We can judge from above results that we cannot reject the null hypothesis $H_0$. Therefore, although on average, women earn more than men in **"Marketing, Advertising & PR"** sector, it is still not significant that men and women earn differently in statistical sense. 
 
 ## Section 4 - Analysis using Correlation and Linear Regression
 
