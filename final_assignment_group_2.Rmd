@@ -309,6 +309,7 @@ clean_data <- clean_data %>%
 ```
 
 Now we will fetch the most recent exchange rates and create a table with them.
+
 ```{r}
 #get live exchange rates
 from <- c(currency_corrected$currency)
@@ -319,14 +320,16 @@ quotes <- quotes %>%
   mutate(currency = c("USD", "GBP", "CAD", "EUR", "AUD", "CHF", "ZAR", "SEK", "HKD", "JPY"))
 ```
 
-Left join the two tables
+We subsequently left join the two tables...
+
 ```{r}
 #join quotes table with bigger table according to the currency
 clean_data <- clean_data %>% 
   left_join(quotes, by="currency") 
 ```
 
-Multiply the total earnings by the exchange rate to get the currency-converted total earnings in USD
+... and multiply the total earnings by the exchange rate to get the currency-converted total earnings in USD.
+
 ```{r}
 clean_data <- clean_data %>% 
   mutate(tot_earnings_USD = total_earnings*Last) 
@@ -472,9 +475,9 @@ ask_a_manager_2021 %>%
 ```
 
 
-
-
 ## Section 2 - Graphically summarising and exploring the Data.
+
+
 
 
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
