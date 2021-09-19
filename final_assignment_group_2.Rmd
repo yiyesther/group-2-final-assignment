@@ -343,34 +343,14 @@ temp5
 ```
 
 
+At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. 
 
 
 
 
-```{r}
-# How is salary distributed?
-
-ggplot(ask_a_manager_2021, aes(x=annual_salary))+
-  geom_density()
 
 
-ggplot(ask_a_manager_2021, aes(x=annual_salary))+
-  stat_ecdf()
-```
-
-```{r}
-# what about log(salary)? 
-ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
-  geom_density()
-
-
-ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
-  stat_ecdf()
-```
-
-```{r}
-# Which one (salary vs. log(salary)) is better to use in a regression model? Why?
-```
+## Section 2 - Graphically summarising and exploring the Data.
 
 ```{r}
 # Some quick counts, groups, etc
@@ -405,18 +385,6 @@ ask_a_manager_2021 %>%
 
 ```
 
-```{r}
-# use countrycode::countryname() to clean country names
-salary_iso3 <- ask_a_manager_2021 %>% 
-  select(country) %>% 
-  pull() %>% 
-  countrycode(
-    origin = "country.name",
-    destination = "iso3c") %>% 
-  as_tibble()
-
-ask_a_manager_2021 <- bind_cols(ask_a_manager_2021, salary_iso3)
-```
 
 ```{r}
 dataframe1 <- 
@@ -473,9 +441,6 @@ ask_a_manager_2021 %>%
   mutate(percent = 100* n/sum(n))%>% 
   arrange(desc(percent))
 ```
-
-
-## Section 2 - Graphically summarising and exploring the Data.
 
 
 
@@ -592,6 +557,34 @@ salary_age %>%
 
 
 ## Section 4 - Analysis using Linear Regression
+
+
+Delete the chunks below if you want to... 
+```{r}
+# How is salary distributed?
+
+ggplot(ask_a_manager_2021, aes(x=annual_salary))+
+  geom_density()
+
+
+ggplot(ask_a_manager_2021, aes(x=annual_salary))+
+  stat_ecdf()
+```
+
+```{r}
+# what about log(salary)? 
+ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
+  geom_density()
+
+
+ggplot(ask_a_manager_2021, aes(x=log(annual_salary)))+
+  stat_ecdf()
+```
+
+```{r}
+# Which one (salary vs. log(salary)) is better to use in a regression model? Why?
+```
+
 
 
 ## Section 5 - Conclusions and Evaluation
