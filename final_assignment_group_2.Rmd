@@ -286,13 +286,12 @@ clean_data <- clean_data %>%
 #make AUD and NZD same currency
 clean_data$currency[clean_data$currency == "AUD/NZD"] <- "AUD"
 
-#convert list type to numeric for other_monetary_comp
+#change the NULL values to 0 for other_monetary_comp
 clean_data$other_monetary_comp <- gsub("NULL", "0", clean_data$other_monetary_comp)
 
+#convert list type to numeric for other_monetary_comp
 clean_data$other_monetary_comp <-
   as.numeric(unlist(clean_data$other_monetary_comp))
-
-glimpse(clean_data)
 
 #clean other_compensation and add it to total compensation
 clean_data <- clean_data %>% 
@@ -316,17 +315,16 @@ quotes <- quotes %>%
 
 Left join the two tables
 ```{r}
+#join quotes table with bigger table according to the currency
 clean_data <- clean_data %>% 
-  left_join(quotes, by="currency") #join quotes table with bigger table according to the currency
+  left_join(quotes, by="currency") 
 ```
 
-Multiply the total earnings by the exchange rate
+Multiply the total earnings by the exchange rate to get the currency-converted total earnings in USD
 ```{r}
 clean_data <- clean_data %>% 
   mutate(tot_earnings_USD = total_earnings*Last) 
 ```
-
-
 
 
 ```{r}
