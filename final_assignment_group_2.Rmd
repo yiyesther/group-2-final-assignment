@@ -83,7 +83,6 @@ ask_a_manager_2021 <- bind_cols(ask_a_manager_2021, salary_iso3)
 
 #Change the column name
 colnames(ask_a_manager_2021)[19] <- "Country"
-
 ```
 
 
@@ -142,6 +141,17 @@ clean_data <- clean_data %>%
   left_join(states_data, by="state")
 ```
 
+
+We can confirm the state cleaning has worked by counting the state abbreviations column - this has 51 entries - the 50 states + NA entries (which arrise due to the large number of people completing this survey who live outside of America, as well as those who live in the District of Columbia which is not registered as a state). 
+
+```{r}
+temp <- clean_data[is.na(clean_data$state_abb),]
+temp2 <- clean_data %>% 
+  count(state_abb, sort = TRUE)
+temp2
+```
+
+
 The gender variable is cleaned by adding entries with "Prefer not to answer" to the "Other or prefer not to answer" group. 
 
 ```{r}
@@ -150,7 +160,7 @@ clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer
 ```
 
 
-The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that futher cleaning of the data will have a negligable effect when comparing the characteristics of the main (most-common) industries. 
+The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that futher cleaning of the data will have a negligible effect when comparing the characteristics of the main (most-common) industries. 
 
 ```{r}
 #Clean "industry"
@@ -191,23 +201,13 @@ clean_data$industry <- gsub("manufacturing", "Manufacturing", clean_data$industr
 ```
 
 ```{r}
-temp <- clean_data %>% 
-  count(industry, sort=TRUE) 
-temp
-```
-
-```{r}
-temp2 <- clean_data[is.na(clean_data$state_abb),]
+# Examining the industry data to ensure that it has been cleaned sufficiently. 
 temp3 <- clean_data %>% 
-  count(state_abb, sort = TRUE)
+  count(industry, sort=TRUE) 
+temp3
 ```
 
-```{r}
-#Examining the top cities to clean the data. 
-temp4 <- clean_data %>% 
-  count(city, sort=TRUE) 
-temp4
-```
+
 
 
 ```{r}
@@ -271,6 +271,13 @@ clean_data$city <- gsub("washington", "DC", clean_data$city)
 clean_data$city <- gsub("washington dc", "DC", clean_data$city)
 ```
 
+
+```{r}
+#Examining the top cities to ensure the data has been cleaned sufficiently.  
+temp4 <- clean_data %>% 
+  count(city, sort=TRUE) 
+temp4
+```
 
 
 
