@@ -612,13 +612,14 @@ ggplot(df10, aes(x="", y=Value, fill=Group))+
   theme_void() + 
   labs(title="Percentage of Surveyed people within each ethnicity category")
 ```
-```
-
-
 
 
 We now want to examine the dependent variable of this investigation, which is average annual salary (converted into USD). In order to analyse this variable, we need to group the salaries into categories...
 
+```{r}
+salary_data <- clean_data %>%
+  mutate
+```
 
 
 
