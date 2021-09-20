@@ -854,7 +854,7 @@ model_2 %>% get_regression_summaries()
 car::vif(model_2)
 ```
 
-Since overall years of professional experience has very high multicollinearity, we remove it in order to iprove this
+Since overall years of professional experience has very high multicollinearity, we remove it in order to improve this
 ```{r}
 model_3 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
