@@ -1,5 +1,5 @@
 ---
-title: "final_group_2"
+title: "final_group_2 - Hamish Edits"
 output: html_document
 ---
 
@@ -341,7 +341,6 @@ temp5 <- clean_data %>%
 temp5
 ```
 
-We have elected not to clean the 'race' data as this is deemed satisfactory, we could aggregate people by race - but this may fail to take into account people that have multiple ethnicities. 
 
 At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. Finally, we omit the unnecessary variables: 
 
