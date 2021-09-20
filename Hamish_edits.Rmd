@@ -618,10 +618,9 @@ ggplot(df10, aes(x="", y=Value, fill=Group))+
 We now want to examine the dependent variable of this investigation, which is average annual salary (converted into USD). In order to analyse this variable, we need to group the salaries into categories...
 
 
-
-
-
-
+```{r}
+ggplot(clean_data, aes(x=tot_earnings_USD))
+```
 
 
 
