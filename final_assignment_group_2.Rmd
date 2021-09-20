@@ -604,11 +604,11 @@ t.test(tot_earnings_USD_log ~ gender, data = salary_gender_uk)
 
 We can see that the $|t-stat| < 2$ and $|p-value| > 0.05$. We still cannot reject the null hypothesis $H_0$ and therefore UK males aged between 18-24 do not earn significantly higher than women in the same age group. 
 
-### Section 3.2 Gender pay inequality across industries in US
+### Section 3.2 Gender pay inequality across industries in USA
 
 ```{r}
-#top 10 industries in UK
-top_10_industry <- clean_data %>% 
+#top 30 industries in USA
+top_30_industry <- clean_data %>% 
   filter(Country == "USA") %>% 
   group_by(industry) %>% 
   count() %>% 
@@ -617,14 +617,15 @@ top_10_industry <- clean_data %>%
   select(industry)
 
 #prepare dataframe for comparison
-top_10_clean_data <- top_10_industry %>% 
+top_30_clean_data <- top_30_industry %>% 
   left_join(clean_data, by="industry") %>% 
   filter(Country == "USA") %>% 
   filter(gender == "Man" | gender == "Woman") %>% 
-  mutate(tot_earnings_USD_log = log(tot_earnings_USD)) %>% 
-  filter(tot_earnings_USD_log>0)
+  #exclude the earnings=0 for the purpose of taking log
+  filter(tot_earnings_USD>0) %>% 
+  mutate(tot_earnings_USD_log = log(tot_earnings_USD))
 
-pay_industry_uk <- top_10_clean_data %>% 
+pay_industry_usa <- top_30_clean_data %>% 
   select(industry, gender, tot_earnings_USD_log) %>% 
   group_by(industry, gender) %>% 
   summarise(mean_pay = mean(tot_earnings_USD_log)) %>% 
@@ -635,10 +636,10 @@ pay_industry_uk <- top_10_clean_data %>%
   filter(pay_gap > 0)
 
 #plot the graph
-pay_industry_uk %>% 
+pay_industry_usa %>% 
   ggplot(aes(x=reorder(industry,pay_gap), y=pay_gap, fill=industry)) +
   geom_col() +
-  labs(title="Industries where women are paid more than men",
+  labs(title="Industries where women are paid more than men in US",
        x="Industry",
        y="Pay gap (women's - men's)",
        fill="Industry") +
@@ -646,21 +647,21 @@ pay_industry_uk %>%
   coord_flip()
 ```
 
-Based on the graph, we can see that in the **"Publishing"** industry, the pay gap is the most significant among top industries where most people work in. But is it statistically significant? Let's look at the following. 
+Based on the graph, we can see that in the **"Publishing"** industry, the pay gap is the most significant among top 30 industries where most people work in. But is it statistically significant? Let's look at the following. 
 
-#### Do UK men earn **statistically** more than women in **Publishing** sector?
+#### Do US men earn **statistically** more than women in **Publishing** sector?
 
 In this case, our null hypothesis is that the mean of earnings between man and woman are the same. 
-
+ 
 $H_0: \overline{x_1} = \overline{x_2}$
 
 ```{r ci_hypothesis_age_salary}
 #calculate the log
-mkt_gender_uk <- top_10_clean_data %>% 
+pub_gender_usa <- top_30_clean_data %>% 
   filter(industry == "Publishing") 
 
-#calculate man and woman confidence intervals for the age group 18-24
-ci_mkt_gender_uk <- mkt_gender_uk %>% 
+#calculate man and woman confidence intervals for the publishing industry
+ci_pub_gender_usa <- pub_gender_usa %>% 
   group_by(gender) %>% 
   summarise(mean_salary = mean(tot_earnings_USD_log),
             sd_salary = sd(tot_earnings_USD_log, na.rm=TRUE),
@@ -671,7 +672,7 @@ ci_mkt_gender_uk <- mkt_gender_uk %>%
             )
 
 #plot the confidence intervals in a graph
-ci_mkt_gender_uk %>% 
+ci_pub_gender_usa %>% 
   ggplot(aes(x=mean_salary, y=gender, color=gender))+
     geom_rect(fill="grey",alpha=0.5, color = "grey",
             aes(xmin=max(ci_salary_dw),
@@ -681,7 +682,7 @@ ci_mkt_gender_uk %>%
   geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
   geom_point(aes(x=mean_salary, y=gender), size=3)+
   geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
-  labs(title="Do UK women earn more than men in the Marketing, Advertising & PR sector?",
+  labs(title="Do US women earn more than men in the publishing sector?",
        subtitle = "95% confidence intervals overlap",
        x = "Mean log of annual earnings",
        y = "Gender",
@@ -691,11 +692,12 @@ ci_mkt_gender_uk %>%
 From the graph we can see that the confidence intervals overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
 
 ```{r}
-#calculate the t-stats for gender pay gap in the hospitality and events industry
-t.test(tot_earnings_USD_log ~ gender, data = mkt_gender_uk)
+#calculate the t-stats for gender pay gap in the publishing industry
+t.test(tot_earnings_USD_log ~ gender, data = pub_gender_usa)
 ```
 
-We can judge from above results that we cannot reject the null hypothesis $H_0$. Therefore, although on average, women earn more than men in **"Marketing, Advertising & PR"** sector, it is still not significant that men and women earn differently in statistical sense. 
+We can judge from above results that we cannot reject the null hypothesis $H_0$ since $p-value > 0.05$. Therefore, although on average, women earn more than men in **"Publishing"** sector, it is still not significant that men and women earn differently in statistical sense. 
+
 
 ## Section 4 - Analysis using Correlation and Linear Regression
 
