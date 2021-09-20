@@ -109,10 +109,10 @@ The state names are standardised as follows, using the abbreviations taken from 
 
 ```{r}
 # Use state abbreviations to categorise state entries
-url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States"
+url_1 <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States"
 
 # get tables that exist on wikipedia page 
-tables <- url %>% 
+tables <- url_1 %>% 
   read_html() %>% 
   html_nodes(css="table")
 
