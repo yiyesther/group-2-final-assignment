@@ -282,7 +282,7 @@ temp4 <- clean_data %>%
 temp4
 ```
 
-Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some poeple also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
+Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some people also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
 
 ```{r}
 clean_data <- clean_data %>% 
