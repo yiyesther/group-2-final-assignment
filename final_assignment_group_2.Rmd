@@ -1067,8 +1067,8 @@ clean_data %>%
   geom_boxplot()+
   labs(title = "Total earning of different races",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
-       x = "Race",
-       y = "Total earnings in USD")+
+       x = "Total earnings in USD",
+       y = "Race")+
   theme_bw()+
   NULL
   
