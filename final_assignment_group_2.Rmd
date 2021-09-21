@@ -961,7 +961,7 @@ We can see that the $|t-stat| < 2$ and $|p-value| > 0.05$. We still cannot rejec
 ### Section 3.2 Gender pay inequality across industries in US
 
 ```{r, warning=FALSE, message=FALSE}
-#top 10 industries in UK
+#top 10 industries in US
 top_10_industry <- clean_data %>% 
   filter(Country == "USA") %>% 
   group_by(industry) %>% 
@@ -978,7 +978,7 @@ top_10_clean_data <- top_10_industry %>%
   mutate(tot_earnings_USD_log = log(tot_earnings_USD)) %>% 
   filter(tot_earnings_USD_log>0)
 
-pay_industry_uk <- top_10_clean_data %>% 
+pay_industry_us <- top_10_clean_data %>% 
   select(industry, gender, tot_earnings_USD_log) %>% 
   group_by(industry, gender) %>% 
   summarise(mean_pay = mean(tot_earnings_USD_log)) %>% 
@@ -989,7 +989,7 @@ pay_industry_uk <- top_10_clean_data %>%
   filter(pay_gap > 0)
 
 #plot the graph
-pay_industry_uk %>% 
+pay_industry_us %>% 
   ggplot(aes(x=reorder(industry,pay_gap), y=pay_gap, fill=industry)) +
   geom_col() +
   labs(title="Industries where women are paid more than men",
@@ -1002,7 +1002,7 @@ pay_industry_uk %>%
 
 Based on the graph, we can see that in the **"Publishing"** industry, the pay gap is the most significant among top industries where most people work in. But is it statistically significant? Let's look at the following. 
 
-#### Do UK men earn **statistically** more than women in **Publishing** sector?
+#### Do US women earn **statistically** more than men in **Publishing** sector?
 
 In this case, our null hypothesis is that the mean of earnings between man and woman are the same. 
 
@@ -1010,11 +1010,11 @@ $H_0: \overline{x_1} = \overline{x_2}$
 
 ```{r, warning=FALSE, message=FALSE}
 #calculate the log
-mkt_gender_uk <- top_10_clean_data %>% 
+pub_gender_uk <- top_10_clean_data %>% 
   filter(industry == "Publishing") 
 
 #calculate man and woman confidence intervals for the age group 18-24
-ci_mkt_gender_uk <- mkt_gender_uk %>% 
+ci_pub_gender_uk <- pub_gender_uk %>% 
   group_by(gender) %>% 
   summarise(mean_salary = mean(tot_earnings_USD_log),
             sd_salary = sd(tot_earnings_USD_log, na.rm=TRUE),
@@ -1025,7 +1025,7 @@ ci_mkt_gender_uk <- mkt_gender_uk %>%
             )
 
 #plot the confidence intervals in a graph
-ci_mkt_gender_uk %>% 
+ci_pub_gender_uk %>% 
   ggplot(aes(x=mean_salary, y=gender, color=gender))+
     geom_rect(fill="grey",alpha=0.5, color = "grey",
             aes(xmin=max(ci_salary_dw),
