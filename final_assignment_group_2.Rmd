@@ -1317,7 +1317,7 @@ model_5 %>% get_regression_summaries()
 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 top_10_country_dummies <- top_10_clean_data %>% 
   dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race", "Industry", "Country"))
   
