@@ -1046,7 +1046,7 @@ From the graph we can see that the confidence intervals overlap. This way we can
 
 ```{r, warning=FALSE, message=FALSE}
 #calculate the t-stats for gender pay gap in the hospitality and events industry
-t.test(tot_earnings_USD_log ~ gender, data = mkt_gender_uk)
+t.test(tot_earnings_USD_log ~ gender, data = pub_gender_uk)
 ```
 
 We can judge from above results that we cannot reject the null hypothesis $H_0$. Therefore, although on average, women earn more than men in **"Publishing"** sector, it is still not significant that men and women earn differently in statistical sense. 
@@ -1261,7 +1261,8 @@ The difference between the earning of these two races is not within the 95% conf
 visualize(earning_edu_boot) + 
   annotate("rect", xmin=percentile_ci_edu$lower_ci, xmax=percentile_ci_edu$upper_ci, ymin=0, ymax=Inf, alpha=0.3, fill = "pink") +
 
-  labs(title="Differences in Masters' and Bachelors' Mean Salary in a world where there is no difference", 
+  labs(title="Differences in Masters' and Bachelors' Mean Salary in a world 
+       where there is no difference", 
        subtitle = "Observed difference marked in red",
        x = "Mean (salary of Masters- salary of Bachlors)", y = "Count")+
   geom_vline(xintercept = observed_difference_edu, colour = "red",
