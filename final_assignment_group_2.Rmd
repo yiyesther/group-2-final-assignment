@@ -724,6 +724,12 @@ The analysis above has highlighted some of the bias in our dataset that needs to
 
 
 
+
+
+
+
+
+
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
 
 ### Section 3.1 Gender pay inequality accross age groups in UK
@@ -1091,6 +1097,9 @@ clean_data %>%
        y = "Overall experience")
   
 ```
+
+
+
 ## Section 4 - Analysis using Correlation and Linear Regression
 
 
