@@ -1,21 +1,18 @@
 # Executive summary for group-2-final-assignment
 
 ## 1. Overall features of the dataset
-- Data needs to be cleaned before analysis (e.g., country, value of salary in different currencies, etc.)
-- Most variables are discrete instead of continuous
+
+In general, this data set does not facilitate simple analysis, due to its complexity and the large number of unique data points within each variable. An initial skim of the dataset highlighted those variables such as ‘city’ and ‘country’ which contained many unique values and would therefore require extensive cleaning. The data was cleaned in a variety of ways; sometimes manually by directly replacing entries (e.g. city entries of ‘NYC’, ‘New York’, ‘New York City’ were all aggregated), but also sometimes by using standardised code (e.g. country code). Most of the variables were discrete instead of continuous, which is possibly why such extensive cleaning was required. The nature of these variables also prevented us from examining the correlation between multiple variables (as only our dependent variable, salary, was continuous). Ultimately, given the time constraints, a full clean of the data was not possible, so for the ‘messiest’ variables, we focused on cleaning the data up to a point (after which further cleaning was unlikely to drastically impact our statistical analysis).  
 
 ## 2. Key takeaways from analysis performed
-- The majority of the data are from US compared to other countries
-- There are more female instances than male
-- Most participants are aged 25-44
-- Computing and Tech is the dominant industry
-- White is the dominant race, probably because US is the dominant country in this survey
-- Gender pay gap (man > woman) is the lease significant in the age group 18-24 in the UK, while most significant in age group 55-64. In UK, women during 18-24 do not earn differently from men in statistical sense.
-- Gender pay gap (woman > man) is the most significant in the publishing sector in the US. However, US women in this sector do not earn significantly differently from men in statistical sense.
-- There is a positive relation between the level of education and the total earnings, and the same applies to overall years of experience and total earnings.
-- White people seems to make more money averagely than the other races. However, it should be noticed that no solid conclusion can be drawn until its colinearity with other factors is investigated, such as education level and experience.
-- As most variables are discrete instead of continuous, it is hard to produce correlation table.
-- TBD (section 4)
 
-## 3. Limitations and further evaluationos
-- TBD
+Our initial data exploration highlighted many key bias’ in the data. Most of these could in fact be explained by the nature of the survey, which targeted (typically affluent) females in management positions. As a result, we found that the data was biased towards females and, in particular, those living in developed countries (such as the United States – which comprised a large percentage of our total sample). There were considerably more female instances than male, and most participants were aged between 25-44. This was surprising, as we expected more senior executives (over the age of 45) to fill out the survey, but this is perhaps due to the time constraints and technological barriers these older individuals might face. Although there was considerable spread, the dominant industry was computing/tech and the dominant race was ‘white’ – which is likely because the primary country, the United States, is also majority ‘white’. Finally, our results were particularly dominated by those who held some form of degree (masters, college or professional). The high proportion of people with a degree was not representative of the rest of the world, or even the United States, and this is likely because people in managerial positions are (on average) statistically likely to be better educated.
+
+Statistical analysis highlighted that the gender pay gap (average pay of men – average pay of women) is the least significant in the 18-24 age group (in the UK), whilst it is most significant in the 55-64 age group. In UK, women during 18-24 do not earn differently from men in statistical sense. Analysis involving confidence intervals and hypothesis tests also revealed that the gender pay gap (in the United States) is the most significant in the publishing sector. However, in a statistical sense, we cannot confidently say that women in this sector do earn significantly less than men. 
+
+We discovered from our results that there is a positive relation between the level of education and the total earnings, but this does not apply to overall years of experience and total earnings. These results are expected and unsurprising. Additionally, white people seem to make less money (on average) than the other races, while being the largest race group in this survey. Due to small sample sizes of the other groups, there is still a lot of uncertainty in these conclusions. It should thus be noted that no solid conclusion can be drawn until the ‘collinearity’ between each factor is investigated, such as whether different races possess different education levels and experience naturally.
+
+
+## 3. Limitations and further evaluations
+
+There were some limitations to the data that prevented further analysis. As previously mentioned, no correlations could be examined due to the discrete nature of most of the variables. Had variables such as ‘experience’ and ‘age’ been continuous (as they normally would be), correlations could have been examined in considerable detail. Additionally, the difficulty associated with cleaning the data set could have introduced some limitations to our analysis. When cleaning variables such as ‘city’ manually, we typically stopped cleaning occurrences that appeared less than 5 times. This means that one respondent, on an extremely high salary who misspelt their location on the survey as ‘New Yrok’ could have been excluded from comparisons of wages in different cities. Our results are therefore not entirely complete, and further cleaning could lead to marginal improvements, however our results are still likely to give a very accurate impression of the overall trends within this dataset.
