@@ -455,7 +455,7 @@ ggplot(df1, aes(x="", y=Value, fill=Group))+
 
 ```
 
-As we can see here, the majority of people surveyed fall into the age bracket of 25-44. Given that 'managers' were the target audience of this survey, we would not expect to see many respondents below this age group, and this is confimed by the chart above. It is however, somewhat surprising that we don't see as many senior executives (between the ages of 45-64) complete the survey - this is something that we may want to factor into our analysis.  
+As we can see here, the majority of people surveyed fall into the age bracket of 25-44. Given that 'managers' were the target audience of this survey, we would not expect to see many respondents below this age group, and this is confirmed by the chart above. It is however, somewhat surprising that we don't see as many senior executives (between the ages of 45-64) complete the survey - this is something that we may want to factor into our analysis.  
 
 
 
@@ -487,7 +487,7 @@ ggplot(df2, aes(x="", y=Value, fill=Group))+
   labs(title="Percentage of Surveyed people within each industry")
 ```
 
-As we can see, there is a fairly balanced distribution of industries, with the most common being Computing/Tech, education and surprisingly non-profit. The balance spread of data between industries should allow for a fairly unbiased comparison of the salaries by industry later in this project. 
+As we can see, there is a fairly balanced distribution of industries, with the most common being Computing/Tech, education and (surprisingly) non-profit. The balanced spread of data between industries should allow for a fairly unbiased comparison of the salaries by industry later in this project. 
 
 
 ```{r}
@@ -580,6 +580,7 @@ ggplot(df5, aes(x="", y=Value, fill=Group))+
   theme_void() + 
   labs(title="Percentage of Surveyed people within each major global city")
 ```
+
 As we can see there is a huge variation in the location (city) of respondents. For this reason, it will be difficult to compare data between cities that are not in the top 5-10 shown above. 
 
 
@@ -604,7 +605,7 @@ ggplot(df6, aes(x="", y=Value, fill=Group))+
 
 ```
 
-This graph above shows that the majority of our respondents have less than 20 years experience. This makes sense given the average age of our respondents is typically between 25 and 44. 
+This graph above shows that the majority of our respondents have less than 20 years experience. This makes sense given the average age of our respondents is typically between 25 and 44. As mentioned previously, we have very few respondents that are senior executives over the age of 45.
 
 
 
@@ -707,12 +708,10 @@ ggplot(df10, aes(x="", y=Value, fill=Group))+
   labs(title="Percentage of Surveyed people within each ethnicity category")
 ```
 
-Here, we can see that a disproportionate number of people surveyed are White. Around 75% of people in the USA are white, and as the USA is the most surveyed country, we expect the proportion of white people to be large. 
-
-The proportion of white people however, is still slightly higher than we would expect (particularly when considering the other countries surveyed) - and this could perhaps highlight a structural preference towards white people in the work place in the United States. 
+Here, we can see that a disproportionate number of people surveyed are White. Around 75% of people in the USA are white, and as the USA is the most surveyed country, we expect the proportion of white people to be large. The proportion of white people however, is still slightly higher than we would expect (particularly when considering the other countries surveyed) - and this could perhaps highlight a structural preference towards white people in the work place (for executive managerial jobs) in the United States. 
 
 
-The analysis above has highlighted some of the bias in our dataset that needs to be considered in our analysis. We have a disproportionately high number of females, as well as biases towards white college educated people who live in the United States. This bias can be explained by the target audience of the "Ask A Manager" survey itself, but needs to be considered in the analysis of this data set.
+The analysis above has highlighted some of the bias in our dataset that needs to be considered in our analysis. We have a disproportionately high number of females, as well as biases towards white people, college educated people, people who live in the United States and people in the 25-44 age group. This bias can generally be explained by the target audience of the "Ask A Manager" survey itself (which focused on females in managerial roles), but this needs to be considered in the analysis of this data set.
 
 
 
