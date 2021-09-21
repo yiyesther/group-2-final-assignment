@@ -1344,8 +1344,6 @@ t.test(tot_earnings_USD ~ overall_years_of_professional_experience,
 
 As the years of experience increases, the increase in mean earnings is not necessarily significant. In other words, people's earning does not always increase significantly when they work longer. The only two significant differences in earnings are observed from 2 - 4 years to 5 - 7 years and from 11 - 20 years to 21 - 30 years. Based on this finding, people are likely to have a significant gain in thier earnings at the middle stages of their career. Also, since people with longer experience already make a lot more than they do at their early stages of career, the relative increase in their earnings will be not as evident. Again, the sample is heavily biased towards the people at middle stages of career, so it is expected that people with 30+ years of experience will have a large SE, thus large CI that makes the increase in earnings appear less significant.
 
-## Section 4 - Analysis using Correlation and Linear Regression
-
 Now we can run t tests for each increment in experience to see at which stage of career are people more likely to gain a significant increase in their earnings.
 
 ```{r,warning=FALSE,message=FALSE}
@@ -1390,32 +1388,21 @@ As the years of experience increases, the increase in mean earnings is not neces
 
 ## Section 4 - Analysis using Correlation and Linear Regression
 
-We now plot the density of the log of total earnings to see if it normally distributed. We want to find out whether it is best to regress on the log transformed variable or leave it untouched.
-
-```{r, warning=FALSE, message=FALSE}
-# what about log(salary)? 
-ggplot(clean_data, aes(x=log(tot_earnings_USD)))+
-  geom_density()
-
-
-ggplot(clean_data, aes(x=log(tot_earnings_USD)))+
-  stat_ecdf()
-```
-
-Seeing this graph, it is probably optimal to use the log of total earnings (USD) as it is normally distributed, in comparison to the untransformed version we saw before. We also remove rows with omitted variables as they are not useful in the regression.
+In order to find a model to predict and explain our dependent variable "salary", we will run a regression analysis. We now plot the density of the log of total earnings to see if it normally distributed. As in section 2, it is probably optimal to use the log of total earnings (USD) as it is normally distributed, in comparison to the untransformed version. We also remove rows with omitted variables as they are not useful in the regression.
 
 ```{r, warning=FALSE, message=FALSE}
 regression_data <- clean_data %>% 
   na.omit()
 ```
 
+We further remove all total earnings data with a value of 0, as the earnings data is the dependent variable we are trying to explain. 
 
 ```{r, warning=FALSE, message=FALSE}
 regression_data <- regression_data[regression_data$tot_earnings_USD != 0,] %>% 
   mutate(log_earnings = log(tot_earnings_USD)) 
 ```
 
-We now create a naive model, regressing on the log of incomes, with a couple of basic variables. 
+Based on these initial data transformations, we now create a naive model, regressing on the log of incomes, with a couple of basic variables. 
 
 ```{r, warning=FALSE, message=FALSE}
 model_1 <- lm(log_earnings ~ how_old_are_you + overall_years_of_professional_experience +
@@ -1425,23 +1412,34 @@ model_1 %>% get_regression_table()
 model_1 %>% get_regression_summaries()
 ```
 
-Education variable is also slightly cleaned to make things easier in the regression
+The naive model produces a quite low adj r squared, indicating that 8,4% of the variability can be explained by the model. The absolute fit of the model (RMSE) confirms our relatively bad fit of the model produced. (lower values indicate better fit, 0 = perfect fit). 
+
+Further we will slightly clean our Education variables so as to make things easier in our regression analysis.
+
 ```{r, warning=FALSE, message=FALSE}
 regression_data$highest_level_of_education_completed <- gsub("Some college", "College degree", regression_data$highest_level_of_education_completed)
 ```
 
+Dealing wiht non numeric values makes it difficult to extract meaningful data from our regressions on this data set. To mitigate this, we will create dummy variables for the gender, education, race, industry and country variables.
+
 ```{r, warning=FALSE, message=FALSE}
 regression_data_dummies <- regression_data %>% 
   dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race"))
+
+top_10_country_dummies <- top_10_clean_data %>% 
+  dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race", "Industry", "Country"))
+  
 ```
 
+
+Next we need to slightly adapt the column names of our dummy variables, in order to go forward with our regression analysis. 
 ```{r, warning=FALSE, message=FALSE}
 names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_Master's degree"] <- "highest_level_of_education_completed_Masters_degree"
 names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_College degree"] <- "highest_level_of_education_completed_College_degree"
 names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_High School"] <- "highest_level_of_education_completed_High_School"
 ```
 
-
+After adjusting our data, we can now run our second regression model. Here we regress on the log of earnings using the explanatory variables of gender, professional experience, experience in the industry, education and race:
 ```{r, warning=FALSE, message=FALSE}
 model_2 <- lm(log_earnings ~ how_old_are_you + overall_years_of_professional_experience +
      years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
@@ -1453,11 +1451,14 @@ model_2 %>% get_regression_table()
 model_2 %>% get_regression_summaries()
 ```
 
+Comparing our Model_2 to the Naive model, we have been able to nearly double the explanatory power while slightly reducing our RMSE value, thus indicating a marginally better fit. Seeing that there are multiple variables with a very high p-value of up to 80%, makes it clear that we need to further clean and adjust our data for a better regression. 
+
 ```{r, warning=FALSE, message=FALSE}
 car::vif(model_2)
 ```
+We then run a Variance inflation factor (VIF) analysis to get a sense of the multicollinearity within our regression variables.
+Since overall years of professional experience has very high multicollinearity, we remove it in order to further improve our model.
 
-Since overall years of professional experience has very high multicollinearity, we remove it in order to improve this
 ```{r, warning=FALSE, message=FALSE}
 model_3 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
@@ -1467,13 +1468,13 @@ model_3 %>% get_regression_table()
 ```{r, warning=FALSE, message=FALSE}
 model_3 %>% get_regression_summaries()
 ```
+Our next attempt at regressing our data, does nothing to the explanatory power of the model nor the fit, but removes the VIF issues we discoverd in our VIF analysis. The model however still consits of a hand full of variables whose p-values are too high to be statistically relevant. We now run another VIF analysis to make sure we have removed our collinearity concerns. 
 
-It worked! No more VIF problems.
 ```{r, warning=FALSE, message=FALSE}
 car::vif(model_3)
 ```
 
-In this fourth and last model we will now remove any variables that were not significant at 5% level in model_3. Thus we remove variables such as
+In our following model, we will now remove any variables that were not significant at 5% level in model_3. Thus we remove variables such as the age groups 25-34, 35-44 and 55-64. 
 We will also remove some outliers (10%) to try to improve the fit of the regression, as some variables' outliers may be influencing the regression.
 
 Here we remove the age brackets which proved insignificant in the regression.
@@ -1482,7 +1483,7 @@ regression_data_filtered <- regression_data_dummies %>%
   filter(how_old_are_you == "25-34" | how_old_are_you == "35-44" | how_old_are_you == "55-64")
 ```
 
-Same variables as model_3 except for race_Black which has been removed and the age values which were omitted for insignificance.
+After performing the latest data transformations we now attempt another regretion with the same variables as model_3 except for race_Black which has been removed and the age values which were omitted for insignificance.
 
 ```{r, warning=FALSE, message=FALSE}
 model_4 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic , data = regression_data_filtered)
@@ -1492,7 +1493,8 @@ model_4 %>% get_regression_table()
 ```{r, warning=FALSE, message=FALSE}
 model_4 %>% get_regression_summaries()
 ```
-Here we eliminate the top and bottom 5% (outliers) from the total earnings category.
+In our 4th regression model, we have now been able to marginally improve the fit (RMSE), while simultaneously reducing our explanatory power.
+Moving forward, we eliminate the top and bottom 5% (outliers) from the total earnings category. We also still have one more variable whose p-value is above the 5% threshold.
 
 ``` {r, warning=FALSE, message=FALSE}
 Q <- quantile(regression_data_filtered$tot_earnings_USD, probs=c(.05, .95))
@@ -1502,10 +1504,12 @@ regression_no_outliers <- subset(regression_data_filtered, regression_data_filte
 
 
 We also remove the age cateogry 35-44 as it was insignificant in the previous regression.
-{r, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=FALSE}
 regression_no_outliers <- regression_no_outliers %>% 
   filter(how_old_are_you == "25-34" | how_old_are_you == "55-64")
+```
 
+After running 4 regressions and adjusting our input data, we now run our 5th and final regression.
 
 ``` {r, warning=FALSE, message=FALSE}
 model_5 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic , data = regression_no_outliers)
@@ -1517,17 +1521,9 @@ model_5 %>% get_regression_table()
 model_5 %>% get_regression_summaries()
 ```
 
+In our final regression, our model again loses more of its explanatory power but significantly improves its fit, from 0.609 in the naive model to 0.388.  
 
-
-
-```{r, warning=FALSE, message=FALSE}
-top_10_country_dummies <- top_10_clean_data %>% 
-  dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race", "Industry", "Country"))
-  
-```
-
-## Section 5 - Conclusions and Evaluation
-
+After running multiple regressions, continuously adjusting our data, we were not able to derive a regression model with a strong explanatory power for the log of total earnings. Our final model only can explain for 12,8% of the variability. Our RMSE of 0.38 provides for a good but not great fit of our model. Overall our data lacked valuable numerical data, which could significantly improved our model. For example if age and experiences were provided in exact years instead of a range of years, we could have increased our explanatory power and produced a more accurate model.
 
 
 
