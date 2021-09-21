@@ -1055,21 +1055,35 @@ t.test(tot_earnings_USD_log ~ gender, data = mkt_gender_uk)
 
 We can judge from above results that we cannot reject the null hypothesis $H_0$. Therefore, although on average, women earn more than men in **"Publishing"** sector, it is still not significant that men and women earn differently in statistical sense. 
 
-### Section 3.3 Race
-```{r, warning=FALSE, message=FALSE}
+
+### Section 3.3 Race vs. total earnings
+
+Now we will investigate on the relationship between race and their earnings.
+
+```{r,=,warning=FALSE,message=FALSE}
 clean_data %>% 
+  #Filter out the outliers
   filter(tot_earnings_USD<300000) %>% 
   drop_na(race) %>% 
+  #Here the mixed races are not taken into account
+  filter(race == c("White","Black","Hispanic","Asian")) %>% 
   ggplot(aes(x = race,y = tot_earnings_USD))+
   geom_boxplot()+
   labs(title = "Total earning of different races",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
        x = "Race",
-       y = "Total earnings in USD")
+       y = "Total earnings in USD")+
+  theme_bw()+
+  NULL
   
 ```
-```{r, warning=FALSE, message=FALSE}
+Some statistical results calculated using formula...
+
+```{r,warning=FALSE,message=FALSE}
 earning_race <- clean_data %>% 
+  filter(race == c("White","Black","Hispanic","Asian")) %>% 
+  # Outlier
+  filter(tot_earnings_USD < 10000000) %>% 
   group_by(race) %>% 
   summarise (mean = mean(tot_earnings_USD), SD = sd(tot_earnings_USD), sample_size = n()) %>% 
   mutate(se = sqrt(SD^2/sample_size), t_value = qt(p=.05/2, df=sample_size-1, lower.tail=FALSE),
@@ -1077,34 +1091,43 @@ earning_race <- clean_data %>%
 
 earning_race
 ```
-```{r, warning=FALSE, message=FALSE}
+
+It can be seen here that Hispanic people have the highest mean earning while White people have the lowest. However, the sample size of White is a lot larger than the other ones, which makes its statistics more predictive. As for the difference in earnings among these race groups, it can be explained by the fact that the Asian and Hispanic who filled this survey are most likely foreign employees in the US, as the majority of people who filled this survey is from the US. They are likely to be more highly skilled than the local Americans, which can explain the difference in earnings. 
+
+To find out about whether races do mark a significant difference in people's earnings, t tests are used to compare earnings between groups of two races. The null hypothesis is that race is not indicative for earnings.
+
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
 t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","Black")))
 ```
-```{r, warning=FALSE, message=FALSE}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
 t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","White")))
 ```
-```{r, warning=FALSE, message=FALSE}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","Hispanic")))
+t.test(tot_earnings_USD ~ race, data = clean_data %>% 
+         filter(race %in% c("Asian","Hispanic")) %>% 
+         filter(tot_earnings_USD <10000000))
 ```
-```{r, warning=FALSE, message=FALSE}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("White","Black")))
+t.test(tot_earnings_USD ~ race, 
+       data = clean_data %>% filter(race %in% c("White","Black")))
 ```
-```{r, warning=FALSE, message=FALSE}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("White","Hispanic")))
+t.test(tot_earnings_USD ~ race, 
+       data = clean_data %>% filter(race %in% c("White","Hispanic")))
 ```
-```{r, warning=FALSE, message=FALSE}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Hispanic","Black")))
+t.test(tot_earnings_USD ~ race, 
+       data = clean_data %>% filter(race %in% c("Hispanic","Black")))
 ```
-* From the above analysis, it can be seen that the largest pay gap exists between White and Asian. To further visualise the difference, a confidence interval plot is created.
+From the above analysis, it can be seen that the largest pay gap exists between White and Asian. To visualise the difference, a confidence interval plot is created.
 
-```{r, hypothesis_testing, warning=FALSE, message=FALSE}
-
+```{r, hypothesis_testing,,warning=FALSE,message=FALSE}
 
 # hypothesis testing using infer package
 set.seed(1234)
@@ -1137,32 +1160,42 @@ percentile_ci <- earning_race_boot %>%
 percentile_ci
 ```
 
-```{r, warning=FALSE, message=FALSE}
-observed_difference <- earning_race$mean[1]-earning_race$mean[2]
+```{r,warning=FALSE,message=FALSE}
+#Calculate the difference in the mean earnings between Asian and White
+observed_difference <- earning_race$mean[1]-earning_race$mean[4]
 observed_difference
 ```
 
-* The difference between the earning of these two races is not within the 95% confidence interval generated by bootstrap.
+The difference between the earning of these two races is not within the 95% confidence interval generated by bootstrap.
 
-```{r, warning=FALSE, message=FALSE}
+```{r,warning=FALSE,message=FALSE}
 visualize(earning_race_boot) + 
   annotate("rect", xmin=percentile_ci$lower_ci, xmax=percentile_ci$upper_ci, ymin=0, ymax=Inf, alpha=0.3, fill = "pink") +
   #shade_ci(endpoints = percentile_ci,fill = "khaki")+
-  labs(title='Differences in White and Asian Mean Salary in a world where there is no difference', 
+  labs(title='Differences in White and Asian Mean Salary in a world 
+       where there is no difference', 
        subtitle = "Observed difference marked in red",
-       x = "Mean (White salary - Asian salary)", y = "Count")+
-  geom_vline(xintercept = observed_difference, colour = "red", linetype="solid", size=1.2)+
+       x = "Mean (salary of Asian- salary of White)", y = "Count")+
+  geom_vline(xintercept = observed_difference, colour = "red",
+             linetype="solid",
+             size=1.2)+
   theme_bw()+
   NULL
   
 ```
 
-### Section 3.4 Education
-```{r, warning=FALSE, message=FALSE}
+It can be seen in the above diagram that the observed difference for earnings between these two races are out of the 95% CI generated by bootstrap. This means that Asian people do make more than White people. However,we will have to look at the difference in background between these two races before we can conclude that it is "race" alone that leads to the difference in earnings.
+
+Judging by the mean values in earning_race, White and Hispanic have the largest difference in earnings, while in the t-test they are not significantly different. This may be because that the sample size of Asian group is so small that its standard error is very big, therefore the CI includes the mean value for White.
+
+### Section 3.4 Education vs. total earnings
+
+```{r,warning=FALSE,message=FALSE}
 clean_data %>% 
   filter(tot_earnings_USD<300000) %>% 
   drop_na(highest_level_of_education_completed) %>% 
-  ggplot(aes(x = tot_earnings_USD, y = fct_reorder(highest_level_of_education_completed,tot_earnings_USD)))+
+  ggplot(aes(x = tot_earnings_USD, 
+             y = fct_reorder(highest_level_of_education_completed,tot_earnings_USD)))+
   geom_boxplot()+
   labs(title = "Total earning of people with different education level",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
@@ -1170,13 +1203,86 @@ clean_data %>%
        y = "Highest level of education")
   
 ```
+It can be seen in the box plot that as the level of education increases, people tend to make more (except for "Some College"). The closest boxes are Master's degree and College degree, and to confirm they are significantly different, a bootstrap analysis is used. The reason why people with "Some College" background make the highest mean earnings is probably because people who drop out of college may have started a business of their own and made success out of it.
 
-### Section 3.5 Experience
-```{r, warning=FALSE, message=FALSE}
+```{r, message=FALSE,warning=FALSE}
+#Construct a table that contains statistical parameters for different education levels
+earning_edu <- clean_data %>% 
+  group_by(highest_level_of_education_completed) %>% 
+  summarise (mean = mean(tot_earnings_USD), SD = sd(tot_earnings_USD), sample_size = n()) %>% 
+  mutate(se = sqrt(SD^2/sample_size), t_value = qt(p=.05/2, df=sample_size-1, lower.tail=FALSE),
+         margin_of_error = t_value*se, earning_low = mean-t_value*se, earning_high = mean+t_value*se) %>% 
+  arrange(desc(mean))
+
+earning_edu
+```
+
+```{r, hypothesis_testing,,warning=FALSE,message=FALSE}
+
+
+# hypothesis testing using infer package
+set.seed(1234)
+
+earning_edu_boot <- clean_data %>% 
+  drop_na(highest_level_of_education_completed) %>% 
+  filter(highest_level_of_education_completed %in% c("College degree","Master's degree")) %>% 
+  # Specify the variable of interest "tot_earnings_USD" and group by race "Asian" and "White"
+  specify(tot_earnings_USD ~ highest_level_of_education_completed) %>% 
+  
+  # Hypothesize a null of no (or zero) difference
+  hypothesize (null = "independence") %>% 
+  
+  # Generate a bunch of simualted samples
+  generate (reps = 1000, type = "permute") %>% 
+  
+  # Find the mean diffference of each sample
+  calculate(stat = "diff in means",
+            order = c("Master's degree", "College degree"))
+
+
+# Select the low and high endpoint from the formula-calculated CIs
+formula_ci_edu <- earning_edu %>%
+  select(earning_low,earning_high)
+
+# Generate 95% percentile of the difference in the two genders' salaries from the bootstrap data
+percentile_ci_edu <- earning_edu_boot %>% 
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+percentile_ci_edu
+```
+
+```{r,warning=FALSE,message=FALSE}
+#Calculate the difference in the mean earnings between Master's and College
+observed_difference_edu <- earning_edu$mean[5]-earning_edu$mean[6]
+observed_difference_edu
+```
+
+The difference between the earning of these two races is not within the 95% confidence interval generated by bootstrap.
+
+```{r,warning=FALSE,message=FALSE}
+visualize(earning_edu_boot) + 
+  annotate("rect", xmin=percentile_ci_edu$lower_ci, xmax=percentile_ci_edu$upper_ci, ymin=0, ymax=Inf, alpha=0.3, fill = "pink") +
+
+  labs(title="Differences in Masters' and Bachelors' Mean Salary in a world where there is no difference", 
+       subtitle = "Observed difference marked in red",
+       x = "Mean (salary of Masters- salary of Bachlors)", y = "Count")+
+  geom_vline(xintercept = observed_difference_edu, colour = "red",
+             linetype="solid",
+             size=1.2)+
+  theme_bw()+
+  NULL
+  
+```
+The observed difference is out of the CI region, which means that getting a Master's degree does help people make more compared to a College degree.
+
+### Section 3.5 Experience vs. total earnings
+
+```{r,warning=FALSE,message=FALSE}
 clean_data %>% 
   filter(tot_earnings_USD<300000) %>% 
   drop_na(overall_years_of_professional_experience) %>% 
-  ggplot(aes(x = tot_earnings_USD, y = fct_reorder(overall_years_of_professional_experience,tot_earnings_USD)))+
+  ggplot(aes(x = tot_earnings_USD, 
+             y = fct_reorder(overall_years_of_professional_experience,tot_earnings_USD)))+
   geom_boxplot()+
   labs(title = "Total earning of people with difference oveall experience",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
@@ -1184,6 +1290,60 @@ clean_data %>%
        y = "Overall experience")
   
 ```
+```{r, message=FALSE,warning=FALSE}
+#Construct a table that contains statistical parameters for different years of experience
+earning_exp <- clean_data %>% 
+  group_by(overall_years_of_professional_experience) %>% 
+  summarise (mean = mean(tot_earnings_USD), SD = sd(tot_earnings_USD), sample_size = n()) %>% 
+  mutate(se = sqrt(SD^2/sample_size), t_value = qt(p=.05/2, df=sample_size-1, lower.tail=FALSE),
+         margin_of_error = t_value*se, earning_low = mean-t_value*se, earning_high = mean+t_value*se) %>% 
+  arrange(desc(mean))
+
+earning_exp
+```
+Unlike education level, working for a longer time does not guarantee a higher earning. The highest mean observed is for the group of 21 - 30 years of work experience, while people who worked for 41 years or more only ranked the 5th. While having more experience does not necessarily mean that the earnings will be higher, the original dataset is dominated by the younger groups. For example, there are only 117 samples in the "41 years or more" group, while we have 9259 samples in the "11 - 20 years" group. Therefore, we cannot conclude confidently that people who have more experience make less than people who have less experience.
+
+Now we can run t tests for each increment in experience to see at which stage of career are people more likely to gain a significant increase in their earnings.
+
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("1 year or less","2 - 4 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("2 - 4 years","5-7 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("5-7 years","8 - 10 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("8 - 10 years","11 - 20 years")))
+
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("11 - 20 years","21 - 30 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("21 - 30 years","31 - 40 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("31 - 40 years","41 years or more")))
+```
+
+As the years of experience increases, the increase in mean earnings is not necessarily significant. In other words, people's earning does not always increase significantly when they work longer. The only two significant differences in earnings are observed from 2 - 4 years to 5 - 7 years and from 11 - 20 years to 21 - 30 years. Based on this finding, people are likely to have a significant gain in thier earnings at the middle stages of their career. Also, since people with longer experience already make a lot more than they do at their early stages of career, the relative increase in their earnings will be not as evident. Again, the sample is heavily biased towards the people at middle stages of career, so it is expected that people with 30+ years of experience will have a large SE, thus large CI that makes the increase in earnings appear less significant.
+
 
 ## Section 4 - Analysis using Correlation and Linear Regression
 
