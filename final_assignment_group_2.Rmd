@@ -269,7 +269,9 @@ clean_data$city <- gsub("washington", "DC", clean_data$city)
 clean_data$city <- gsub("washington dc", "DC", clean_data$city)
 ```
 
-Cleaning races variable
+
+We follow this by cleaning the 'race' variable, once again aggregating similar/comparable instances of the same ethnicity to create a more transparent data set. 
+
 ```{r}
 clean_data$race <- gsub("Asian or Asian American", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian or Asian American, Another option listed here or prefer not to answer", "Asian", clean_data$race)
