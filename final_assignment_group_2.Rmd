@@ -46,6 +46,7 @@ We subsequently assign the raw data to a new variable (ask_a_manager_2021), whic
 ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>% 
   janitor::clean_names()
 ```
+
 ```{r}
 skimr::skim(ask_a_manager_2021)
 ```
@@ -57,7 +58,7 @@ By analysing n_missing and n_unique, we can gain an insight into which variables
 
 We begin by cleaning the "country" variable. This involves using standardised 'countrycode' to convert the countries into a standard, recognisable format. 
 
-Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change instances of "England" to "UK". We ignore mispellings, as they only represent a small portion of the data set. 
+Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change occurrences of "England" to "UK". We ignore misspellings, as they only represent a small portion of the data set. 
 
 ```{r}
 # Clean specific country names so that they can be recognised by iso3 countrycode. 
@@ -90,7 +91,7 @@ colnames(ask_a_manager_2021)[19] <- "Country"
 ```
 
 
-Next, we create a new dataframe by selecting the columns (variables) that are most suitable for analysis. For example, this involves omitting the column 'additional_context_on_job_title'. This column contains little information that is appropriate for statistical analysis. 
+Next, we create a new dataframe by selecting the columns (variables) that are most suitable for analysis. For example, this involves omitting the column `additional_context_on_job_title`. This column contains little information that is appropriate for statistical analysis. 
 
 ```{r}
 #Create a new dataframe for the desired data
@@ -104,7 +105,7 @@ We repeat the procedure we used to clean the country data for the states - using
 #Clean "states" so that they can be recognised by specific state code. 
 clean_data$state <- gsub("District of Columbia, Virginia", "Virginia", clean_data$state)
 clean_data$state <- gsub("District of Columbia, Maryland", "Maryland", clean_data$state)
-clean_data$state <- gsub("District of Columbia, Washington", "Washington", clean_data$state)
+clean_data$state <- gsub("District of Columbia, Washington", "Maryland", clean_data$state)
 ```
 
 The state names are standardised as follows, using the abbreviations taken from the following wikipedia page. 
@@ -146,7 +147,7 @@ clean_data <- clean_data %>%
 ```
 
 
-We can confirm the state cleaning has worked by counting the state abbreviations column - this has 51 entries - the 50 states + NA entries (which arrise due to the large number of people completing this survey who live outside of America, as well as those who live in the District of Columbia which is not registered as a state). 
+We can confirm the state cleaning has worked by counting the state abbreviations column - this has 51 entries - the 50 states + NA entries (which arise due to the large number of people completing this survey who live outside of America, as well as those who live in the District of Columbia which is not registered as a state). 
 
 ```{r}
 temp <- clean_data[is.na(clean_data$state_abb),]
@@ -163,6 +164,7 @@ The gender variable is cleaned by adding entries with "Prefer not to answer" to 
 clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
 clean_data$gender <- gsub("Non-binary", "Other or prefer not to answer", clean_data$gender)
 ```
+
 
 The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most-common) industries. 
 
@@ -204,22 +206,13 @@ clean_data$industry <- gsub("manufacturing", "Manufacturing", clean_data$industr
 
 ```
 
-```{r}
-# Examining the industry data to ensure that it has been cleaned sufficiently. 
-temp3 <- clean_data %>% 
-  count(industry, sort=TRUE) 
-temp3
-```
 
-
-The "city" data is also cleaned manually, this is done by grouping repeated names of the same city - for instance "New York", "New York City", "NYC" are all grouped as "NYC". We clean data for all cities that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most lived in) cities. For example - when comparing the average salaries of people who live in New York with those who live in Washington - further cleaning of city data with n < 5 items will not largely impact this comparison.  
-
-
+The "city" data is also cleaned manually, this is done by grouping repeated names of the same city - for instance "New York", "New York City", "NYC" are all grouped as "NY". We clean data for all cities that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most lived in) cities. For example - when comparing the average salaries of people who live in New York with those who live in Washington - further cleaning of city data with n < 5 items will not largely impact this comparison.  
 
 ```{r}
 #Clean City Data (clean all cities with n >= 5)
-clean_data$city <- gsub("New York City", "NYC", clean_data$city)
-clean_data$city <- gsub("New York", "NYC", clean_data$city)
+clean_data$city <- gsub("New York City", "NY", clean_data$city)
+clean_data$city <- gsub("New York", "NY", clean_data$city)
 clean_data$city <- gsub("Washington, DC", "DC", clean_data$city)
 clean_data$city <- gsub("Washington", "DC", clean_data$city)
 clean_data$city <- gsub("Washington DC", "DC", clean_data$city)
@@ -227,13 +220,13 @@ clean_data$city <- gsub("DC DC", "DC", clean_data$city)
 clean_data$city <- gsub("DC, D.C.", "DC", clean_data$city)
 clean_data$city <- gsub("Long Beach", "LA", clean_data$city)
 clean_data$city <- gsub("District of Columbia", "DC", clean_data$city)
-clean_data$city <- gsub("Manhattan", "NYC", clean_data$city)
+clean_data$city <- gsub("Manhattan", "NY", clean_data$city)
 clean_data$city <- gsub("San Francisco", "San Fran", clean_data$city)
 clean_data$city <- gsub("San Francisco Bay Area", "San Fran", clean_data$city)
-clean_data$city <- gsub("new york", "NYC", clean_data$city)
+clean_data$city <- gsub("new york", "NY", clean_data$city)
 clean_data$city <- gsub("DC D.C.", "DC", clean_data$city)
 clean_data$city <- gsub("SF Bay Area", "San Fran", clean_data$city)
-clean_data$city <- gsub("New york", "NYC", clean_data$city)
+clean_data$city <- gsub("New york", "NY", clean_data$city)
 clean_data$city <- gsub("Vancouver, BC", "Vancouver", clean_data$city)
 clean_data$city <- gsub("Bay Area", "San Fran", clean_data$city)
 clean_data$city <- gsub("Cambridge, MA", "Cambridge", clean_data$city)
@@ -244,7 +237,7 @@ clean_data$city <- gsub("Chicago suburbs", "Chicago", clean_data$city)
 clean_data$city <- gsub("D.C.", "DC", clean_data$city)
 clean_data$city <- gsub("South San Francisco", "San Fran", clean_data$city)
 clean_data$city <- gsub("Chicago Suburbs", "Chicago", clean_data$city)
-clean_data$city <- gsub("NYC, NY", "NYC", clean_data$city)
+clean_data$city <- gsub("NYC, NY", "NY", clean_data$city)
 clean_data$city <- gsub("Boston area", "Boston", clean_data$city)
 clean_data$city <- gsub("chicago", "Chicago", clean_data$city)
 clean_data$city <- gsub("Los angeles", "LA", clean_data$city)
@@ -257,18 +250,18 @@ clean_data$city <- gsub("seattle", "Seattle", clean_data$city)
 clean_data$city <- gsub("Seattle, WA", "Seattle", clean_data$city)
 clean_data$city <- gsub("boston", "Boston", clean_data$city)
 clean_data$city <- gsub("London, UK", "London", clean_data$city)
-clean_data$city <- gsub("Nyc", "NYC", clean_data$city)
-clean_data$city <- gsub("NYC city", "NYC", clean_data$city)
+clean_data$city <- gsub("Nyc", "NY", clean_data$city)
+clean_data$city <- gsub("NYC city", "NY", clean_data$city)
 clean_data$city <- gsub("San francisco", "San Fran", clean_data$city)
 clean_data$city <- gsub("atlanta", "Atlanta", clean_data$city)
 clean_data$city <- gsub("Atlanta metro area", "Atlanta", clean_data$city)
-clean_data$city <- gsub("Bronx", "NYC", clean_data$city)
+clean_data$city <- gsub("Bronx", "NY", clean_data$city)
 clean_data$city <- gsub("Boston Area", "Boston", clean_data$city)
 clean_data$city <- gsub("Chicago, IL", "Chicago", clean_data$city)
 clean_data$city <- gsub("Greater Toronto Area", "Toronto", clean_data$city)
 clean_data$city <- gsub("indianapolis", "Indianapolis", clean_data$city)
 clean_data$city <- gsub("los angeles", "LA", clean_data$city)
-clean_data$city <- gsub("NY", "NYC", clean_data$city)
+clean_data$city <- gsub("NYC", "NY", clean_data$city)
 clean_data$city <- gsub("Santa Monica", "LA", clean_data$city)
 clean_data$city <- gsub("toronto", "Toronto", clean_data$city)
 clean_data$city <- gsub("Vancouver, British Columbia", "Vancouver", clean_data$city)
@@ -277,96 +270,35 @@ clean_data$city <- gsub("washington", "DC", clean_data$city)
 clean_data$city <- gsub("washington dc", "DC", clean_data$city)
 ```
 
-Cleaning races variable
+
+We follow this by cleaning the 'race' variable, once again aggregating similar/comparable occurrences of the same ethnicity to create a more transparent data set. 
+
 ```{r}
 clean_data$race <- gsub("Asian or Asian American", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian or Asian American, Another option listed here or prefer not to answer", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian or Asian American, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Black or African American", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Black or African American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Black or African American, Native American or Alaska Native, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Middle Eastern or Northern African", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, White, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
 clean_data$race <- gsub("Black or African American", "Black", clean_data$race)
 clean_data$race <- gsub("Black or African American, Another option not listed here or prefer not to answer", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Middle Eastern or Northern African, White", "Black", clean_data$race)
 clean_data$race <- gsub("Hispanic, Latino, or Spanish origin", "Hispanic", clean_data$race)
 clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Another option not listed here or prefer not to answer", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, Another option not listed here or prefer not to answer, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White, Another option not listed here or prefer not to answer", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native, White", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, White", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native, Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native, White", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("White, Another option not listed here or prefer not to answer", "White", clean_data$race)
-clean_data$race <- gsub("Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("Asian or African American", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, Other, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic, Other, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic, White", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian, Other", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black, Other, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Black", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Hispanic", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Hispanic, Other, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Hispanic, White", "Black", clean_data$race)
 clean_data$race <- gsub("Black, Other", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Other, Other, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Other, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black, White", "Black", clean_data$race)
 clean_data$race <- gsub("Hispanic, Other", "Hispanic", clean_data$race)
 clean_data$race <- gsub("Hispanic, Other, Other", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Other, White", "Hispanic", clean_data$race)
 clean_data$race <- gsub("Other, Other", "Other", clean_data$race)
-clean_data$race <- gsub("Otherc, Other, White", "Other", clean_data$race)
+clean_data$race <- gsub("Other, Other, White", "Other", clean_data$race)
 clean_data$race <- gsub("Other, White", "Other", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian, Other", "Asian", clean_data$race)
 clean_data$race <- gsub("Hispanic, Other", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, White", "Hispanic", clean_data$race)
 ```
 
 
-```{r}
-#Examining the top cities to ensure the data has been cleaned sufficiently.  
-temp4 <- clean_data %>% 
-  count(city, sort=TRUE) 
-temp4
-```
-
-Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some poeple also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
+Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some people also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
 
 ```{r}
 clean_data <- clean_data %>% 
-  filter(clean_data$currency != "Other") #remove 'other' currencies
+  #remove 'other' currencies
+  filter(clean_data$currency != "Other") 
 
 #make AUD and NZD same currency
 clean_data$currency[clean_data$currency == "AUD/NZD"] <- "AUD"
@@ -386,6 +318,7 @@ clean_data <- clean_data %>%
 clean_data <- clean_data %>% 
   mutate(total_earnings = other_compensation + annual_salary)
 ```
+
 
 Now we will fetch the most recent exchange rates and create a table with them.
 
@@ -432,101 +365,307 @@ clean_data <- clean_data %>%
 
 
 
-
-
-
-
 ## Section 2 - Graphically summarising and exploring the Data.
 
-```{r}
-# Some quick counts, groups, etc
+### Section 2.1 - Exploration of the Independent Variables
 
-ask_a_manager_2021 %>% 
-  count(how_old_are_you, sort=TRUE) %>% 
-  mutate(percent = 100* n/sum(n))
-```
+Now that we have cleaned the data set, we can begin exploring it. We will start this process by looking individually at the different independent variables - determining the main components that make up each variable in the cleaned data set, as well as what proportion they represent. This allows us to better understand the characteristics of our sample, and draw some initial conclusions about why the data is distributed the way that it is. 
 
 ```{r}
-# Industry is messy... it has > 1000 different industries  
-ask_a_manager_2021 %>% 
-  count(industry, sort=TRUE) %>% 
-  mutate(percent = 100* n/sum(n))
-```
-
-
-```{r}
-# Most of 'currency' is USD
-ask_a_manager_2021 %>% 
-  count(currency, sort=TRUE) %>% 
+# We begin by counting the number of participants in different age groups...
+prop_age <- clean_data %>% 
+  count(how_old_are_you) %>% 
   mutate(percent = 100* n/sum(n))
 
+df1 <- data.frame(
+  Group = prop_age$how_old_are_you,
+  Value = prop_age$percent
+)
+
+#Constructing a pie chart...
+ggplot(df1, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of Surveyed people within each age category")
+# add percentage mark and change labels
+  
+  #geom_text(aes(x=1.05*sin(middle), y=1.05*cos(middle),label = Value,
+                #hjust = hjust, vjust = vjust))
+
 ```
+
+As we can see here, the majority of people surveyed fall into the age bracket of 25-44. Given that 'managers' were the target audience of this survey, we would not expect to see many respondents below this age group, and this is confirmed by the chart above. It is however, somewhat surprising that we don't see as many senior executives (between the ages of 45-64) complete the survey - this is something that we may want to factor into our analysis.  
+
 
 
 ```{r}
-# 'country' 
-ask_a_manager_2021 %>% 
-  count(Country, sort=TRUE) %>% 
+# Next we count the number of people in different industries... this time there are too many categories, so we group industries with <500 workers into 'Other'
+
+prop_industry <- clean_data %>% 
+  count(industry, sort=TRUE, na.rm = TRUE)
+prop_industry$industry <- ifelse(prop_industry$n < 500, "Other", prop_industry$industry)
+
+prop_industry2 <- aggregate(prop_industry$n, by=list(industry=prop_industry$industry), FUN=sum)
+
+prop_industry2 <- prop_industry2 %>%
+  mutate(percent = 100* x/sum(x)) %>%
+  arrange(percent)
+#prop_industry2
+
+df2 <- data.frame(
+  Group = prop_industry2$industry,
+  Value = prop_industry2$percent
+)
+
+#Constructing a pie chart...
+ggplot(df2, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of Surveyed people within each industry")
+```
+
+As we can see, there is a fairly balanced distribution of industries, with the most common being Computing/Tech, education and (surprisingly) non-profit. The balanced spread of data between industries should allow for a fairly unbiased comparison of the salaries by industry later in this project. 
+
+
+```{r}
+# We display the country data in a similar way, grouping countries that have less than 200 respondents as 'other'...
+
+prop_country <- clean_data %>% 
+  count(Country, sort=TRUE, na.rm = TRUE)
+prop_country$Country <- ifelse(prop_country$n < 200, "Other", prop_country$Country)
+
+prop_country2 <- aggregate(prop_country$n, by=list(Country=prop_country$Country), FUN=sum)
+
+prop_country2 <- prop_country2 %>%
+  mutate(percent = 100* x/sum(x)) %>%
+  arrange(percent)
+#prop_country2
+
+df3 <- data.frame(
+  Group = prop_country2$Country,
+  Value = prop_country2$percent
+)
+
+#Constructing a pie chart...
+ggplot(df3, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of Surveyed people within each country")
+```
+
+The pie chart above shows that a huge proportion of our respondents come from the United States. This needs to be factored into our analysis, as it is not representative of the global population, and as a result we may see higher-than-expected salary values. In addition, we will be able to make predictions about the USA with greater confidence than we will for other countries. 
+
+
+
+```{r}
+# We repeat this process again to explore the 'state' variable, this time we remove NA's and group states that have less than 350 respondents as 'other'...
+
+prop_state <- clean_data %>% 
+  count(state_abb, sort=TRUE, na.rm = TRUE)
+prop_state$state_abb <- ifelse(prop_state$n < 300, "Other", prop_state$state_abb)
+
+prop_state2 <- aggregate(prop_state$n, by=list(state_abb=prop_state$state_abb), FUN=sum)
+
+prop_state2 <- prop_state2 %>%
+  mutate(percent = 100* x/sum(x)) %>%
+  arrange(percent)
+#prop_state2
+
+df4 <- data.frame(
+  Group = prop_state2$state_abb,
+  Value = prop_state2$percent
+)
+
+#Constructing a pie chart...
+ggplot(df4, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of Surveyed people within each US State")
+```
+
+The figure above shows that there is a disproportionate number of respondents living in states such as CA, NY and WA. This is expected however, as these states have some of the largest cities in the USA and some of the better-paid 'managerial' jobs. 
+
+
+```{r}
+# Now we explore the 'city' variable... any city with less than 500 people is grouped into 'other'
+
+prop_city <- clean_data %>% 
+  count(city, sort=TRUE, na.rm = TRUE)
+prop_city$city <- ifelse(prop_city$n < 500, "Other", prop_city$city)
+
+prop_city2 <- aggregate(prop_city$n, by=list(city=prop_city$city), FUN=sum)
+
+prop_city2 <- prop_city2 %>%
+  mutate(percent = 100* x/sum(x)) %>%
+  arrange(percent)
+#prop_city2
+
+df5 <- data.frame(
+  Group = prop_city2$city,
+  Value = prop_city2$percent
+)
+
+#Constructing a pie chart...
+ggplot(df5, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of Surveyed people within each major global city")
+```
+
+As we can see there is a huge variation in the location (city) of respondents. For this reason, it will be difficult to compare data between cities that are not in the top 5-10 shown above. 
+
+
+```{r}
+# We now explore the variable - 'overall_years_of_experience' ...
+prop_totalexp <- clean_data %>% 
+  count(overall_years_of_professional_experience) %>% 
   mutate(percent = 100* n/sum(n))
 
+df6 <- data.frame(
+  Group = prop_totalexp$overall_years_of_professional_experience,
+  Value = prop_totalexp$percent
+)
+
+#Constructing a pie chart...
+ggplot(df6, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of people within each category of OVERALL experience level")
+
 ```
+
+This graph above shows that the majority of our respondents have less than 20 years experience. This makes sense given the average age of our respondents is typically between 25 and 44. As mentioned previously, we have very few respondents that are senior executives over the age of 45.
+
 
 
 ```{r}
-dataframe1 <- 
-  ask_a_manager_2021 %>% 
-  group_by(country) %>% 
-  count()
-```
-
-
-```{r}
-# 'city' 
-ask_a_manager_2021 %>% 
-  count(city, sort=TRUE) %>% 
+# We now explore the variable - 'years of experience within specific field' ...
+prop_fieldexp <- clean_data %>% 
+  count(years_of_experience_in_field) %>% 
   mutate(percent = 100* n/sum(n))
+
+df7 <- data.frame(
+  Group = prop_fieldexp$years_of_experience_in_field,
+  Value = prop_fieldexp$percent
+)
+
+#Constructing a pie chart...
+ggplot(df7, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of people in each category of \nSECTOR-SPECIFIC experience level")
 ```
+
+Here we see that almost nobody has more than 20 years of sector specific experience - once again we expect these results, as the average number of years of sector specific experience should almost certainly be less than the average number of years of total experience. 
 
 
 ```{r}
-# highest_level_of_education_completed 
-ask_a_manager_2021 %>% 
+# Education Level ...
+prop_education <- clean_data %>% 
   count(highest_level_of_education_completed) %>% 
-  mutate(percent = 100* n/sum(n))%>% 
-  arrange(desc(percent))
+  mutate(percent = 100* n/sum(n))
+
+df8 <- data.frame(
+  Group = prop_education$highest_level_of_education_completed,
+  Value = prop_education$percent
+)
+
+#Constructing a pie chart...
+ggplot(df8, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of people in each category of education level")
 ```
 
-```{r}
-# gender
-ask_a_manager_2021 %>% 
-  count(gender) %>% 
-  mutate(percent = 100* n/sum(n))%>% 
-  arrange(desc(percent))
-```
+The results for education highlight the fact that a disproportionate number of our respondents hold some form of degree (Master's or College). This is not representative of the global population, or even the population of the United States. This bias is expected within the data, as the survey is targeted towards people in 'managerial' roles - typically, we would expect these people to be more likely to have a degree. 
+
 
 ```{r}
-# race
-ask_a_manager_2021 %>% 
-  count(race) %>% 
-  mutate(percent = 100* n/sum(n))%>% 
-  arrange(desc(percent))
+# Gender ...
+prop_gender <- clean_data %>% 
+  count(gender, na.rm = TRUE) %>% 
+  mutate(percent = 100* n/sum(n))
+
+df9 <- data.frame(
+  Group = prop_gender$gender,
+  Value = prop_gender$percent
+)
+
+#Constructing a pie chart...
+ggplot(df9, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of people in each gender category")
 ```
 
-```{r}
-# overall_years_of_professional_experience 
-ask_a_manager_2021 %>% 
-  count(overall_years_of_professional_experience ) %>% 
-  mutate(percent = 100* n/sum(n))%>% 
-  arrange(desc(percent))
-```
+As this survey is targeted towards females, we have a particularly biased data set when it comes to gender. This is important to consider. 
+
+
 
 ```{r}
-# years_of_experience_in_field  
-ask_a_manager_2021 %>% 
-  count(years_of_experience_in_field  ) %>% 
-  mutate(percent = 100* n/sum(n))%>% 
-  arrange(desc(percent))
+# Finally, we explore the variable 'race' - in this instance, we group any ethnicity with n < 200 as 'Other'...
+
+prop_race <- clean_data %>% 
+  count(race, sort=TRUE, na.rm = TRUE)
+prop_race$race <- ifelse(prop_race$n < 200, "Other", prop_race$race)
+prop_race$race <- ifelse(prop_race$race == "Another option not listed here or prefer not to answer", "Other", prop_race$race)
+
+prop_race2 <- aggregate(prop_race$n, by=list(race=prop_race$race), FUN=sum)
+
+prop_race2 <- prop_race2 %>%
+  mutate(percent = 100* x/sum(x)) %>%
+  arrange(percent)
+#prop_race2
+
+df10 <- data.frame(
+  Group = prop_race2$race,
+  Value = prop_race2$percent
+)
+
+#Constructing a pie chart...
+ggplot(df10, aes(x="", y=Value, fill=Group))+ 
+  geom_col(color = "black")+
+  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  coord_polar(theta = "y") + 
+  theme_void() + 
+  labs(title="Percentage of Surveyed people within each ethnicity category")
 ```
+
+Here, we can see that a disproportionate number of people surveyed are White. Around 75% of people in the USA are white, and as the USA is the most surveyed country, we expect the proportion of white people to be large. The proportion of white people however, is still slightly higher than we would expect (particularly when considering the other countries surveyed) - and this could perhaps highlight a structural preference towards white people in the work place (for executive managerial jobs) in the United States. 
+
+
+The analysis above has highlighted some of the bias in our dataset that needs to be considered in our analysis. We have a disproportionately high number of females, as well as biases towards white people, college educated people, people who live in the United States and people in the 25-44 age group. This bias can generally be explained by the target audience of the "Ask A Manager" survey itself (which focused on females in managerial roles), but this needs to be considered in the analysis of this data set.
+
+
+
+### Section 2.1 - Exploring the dependent variable and its relations.
+
+
+
+
+
+
+
+
+
 
 
 
@@ -761,7 +900,7 @@ ci_mkt_gender_uk %>%
   geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
   geom_point(aes(x=mean_salary, y=gender), size=3)+
   geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
-  labs(title="Do UK women earn more than men in the Marketing, Advertising & PR sector?",
+  labs(title="Do US women earn more than men in the Publishing sector?",
        subtitle = "95% confidence intervals overlap",
        x = "Mean log of annual earnings",
        y = "Gender",
@@ -908,6 +1047,10 @@ clean_data %>%
 ```
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> a6a5a307d212e6047a91320d84613d4dadc830b3
 ## Section 4 - Analysis using Correlation and Linear Regression
 
 
@@ -957,6 +1100,7 @@ model_1 %>% get_regression_summaries()
 Education variable is also slightly cleaned to make things easier in the regression
 ```{r}
 #Clean "education"
+#add new dataframe for this
 clean_data$highest_level_of_education_completed <- gsub("Some college", "College degree", clean_data$highest_level_of_education_completed)
 clean_data$highest_level_of_education_completed <- gsub("Professional degree (MD,JD, etc.)", "Master's degree", clean_data$highest_level_of_education_completed)
 ```
@@ -989,9 +1133,16 @@ Since overall years of professional experience has very high multicollinearity, 
 ```{r}
 model_3 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
+#
 model_3 %>% get_regression_table()
+```
+
+
+```{r}
+#
 model_3 %>% get_regression_summaries()
 ```
+
 It worked! No more VIF problems.
 ```{r}
 car::vif(model_3)
@@ -1005,12 +1156,7 @@ top_10_dummies <- top_10_clean_data %>%
   
 ```
 
-```{r}
-model_4 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
-model_4 %>% get_regression_table()
-model_4 %>% get_regression_summaries()
-```
 
 ## Section 5 - Conclusions and Evaluation
 

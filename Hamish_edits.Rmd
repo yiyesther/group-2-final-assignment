@@ -357,12 +357,11 @@ clean_data <- clean_data %>%
 
 
 
-
 ## Section 2 - Graphically summarising and exploring the Data.
 
-### Section 2.1 - Exploration of the Variables
+### Section 2.1 - Exploration of the Independent Variables
 
-Now that we have cleaned the data set, we can begin exploring it. We will start this process by looking individually at the different variables - determining the main components that make up each variable in the cleaned data set, as well as what proportion they represent. This allows us to better understand the characteristics of our sample, and draw some initial conclusions about why the data is distributed the way that it is. 
+Now that we have cleaned the data set, we can begin exploring it. We will start this process by looking individually at the different independent variables - determining the main components that make up each variable in the cleaned data set, as well as what proportion they represent. This allows us to better understand the characteristics of our sample, and draw some initial conclusions about why the data is distributed the way that it is. 
 
 ```{r}
 # We begin by counting the number of participants in different age groups...
@@ -384,6 +383,10 @@ ggplot(df1, aes(x="", y=Value, fill=Group))+
   labs(title="Percentage of Surveyed people within each age category")
 
 ```
+
+As we can see here, the majority of people surveyed fall into the age bracket of 25-44. Given that 'managers' were the target audience of this survey, we would not expect to see many respondents below this age group, and this is confimed by the chart above. It is however, somewhat surprising that we don't see as many senior executives (between the ages of 45-64) complete the survey - this is something that we may want to factor into our analysis.  
+
+
 
 ```{r}
 # Next we count the number of people in different industries... this time there are too many categories, so we group industries with <500 workers into 'Other'
@@ -413,6 +416,9 @@ ggplot(df2, aes(x="", y=Value, fill=Group))+
   labs(title="Percentage of Surveyed people within each industry")
 ```
 
+As we can see, there is a fairly balanced distribution of industries, with the most common being Computing/Tech, education and surprisingly non-profit. The balance spread of data between industries should allow for a fairly unbiased comparison of the salaries by industry later in this project. 
+
+
 ```{r}
 # We display the country data in a similar way, grouping countries that have less than 200 respondents as 'other'...
 
@@ -440,6 +446,10 @@ ggplot(df3, aes(x="", y=Value, fill=Group))+
   theme_void() + 
   labs(title="Percentage of Surveyed people within each country")
 ```
+
+The pie chart above shows that a huge proportion of our respondents come from the United States. This needs to be factored into our analysis, as it is not representative of the global population, and as a result we may see higher-than-expected salary values. In addition, we will be able to make predictions about the USA with greater confidence than we will for other countries. 
+
+
 
 ```{r}
 # We repeat this process again to explore the 'state' variable, this time we remove NA's and group states that have less than 350 respondents as 'other'...
@@ -469,6 +479,8 @@ ggplot(df4, aes(x="", y=Value, fill=Group))+
   labs(title="Percentage of Surveyed people within each US State")
 ```
 
+The figure above shows that there is a disproportionate number of respondents living in states such as CA, NY and WA. This is expected however, as these states have some of the largest cities in the USA and some of the better-paid 'managerial' jobs. 
+
 
 ```{r}
 # Now we explore the 'city' variable... any city with less than 500 people is grouped into 'other'
@@ -497,6 +509,7 @@ ggplot(df5, aes(x="", y=Value, fill=Group))+
   theme_void() + 
   labs(title="Percentage of Surveyed people within each major global city")
 ```
+As we can see there is a huge variation in the location (city) of respondents. For this reason, it will be difficult to compare data between cities that are not in the top 5-10 shown above. 
 
 
 ```{r}
@@ -520,6 +533,8 @@ ggplot(df6, aes(x="", y=Value, fill=Group))+
 
 ```
 
+This graph above shows that the majority of our respondents have less than 20 years experience. This makes sense given the average age of our respondents is typically between 25 and 44. 
+
 
 
 ```{r}
@@ -542,6 +557,9 @@ ggplot(df7, aes(x="", y=Value, fill=Group))+
   labs(title="Percentage of people in each category of SECTOR-SPECIFIC experience level")
 ```
 
+Here we see that almost nobody has more than 20 years of sector specific experience - once again we expect these results, as the average number of years of sector specific experience should almost certainly be less than the average number of years of total experience. 
+
+
 ```{r}
 # Education Level ...
 prop_education <- clean_data %>% 
@@ -561,6 +579,8 @@ ggplot(df8, aes(x="", y=Value, fill=Group))+
   theme_void() + 
   labs(title="Percentage of people in each category of education level")
 ```
+
+The results for education highlight the fact that a disproportionate number of our respondents hold some form of degree (Master's or College). This is not representative of the global population, or even the population of the United States. This bias is expected within the data, as the survey is targeted towards people in 'managerial' roles - typically, we would expect these people to be more likely to have a degree. 
 
 
 ```{r}
@@ -582,6 +602,9 @@ ggplot(df9, aes(x="", y=Value, fill=Group))+
   theme_void() + 
   labs(title="Percentage of people in each gender category")
 ```
+
+As this survey is targeted towards females, we have a particularly biased data set when it comes to gender. This is important to consider. 
+
 
 
 ```{r}
@@ -613,13 +636,19 @@ ggplot(df10, aes(x="", y=Value, fill=Group))+
   labs(title="Percentage of Surveyed people within each ethnicity category")
 ```
 
+Here, we can see that a disproportionate number of people surveyed are White. Around 75% of people in the USA are white, and as the USA is the most surveyed country, we expect the proportion of white people to be large. 
 
-We now want to examine the dependent variable of this investigation, which is average annual salary (converted into USD). In order to analyse this variable, we need to group the salaries into categories...
+The proportion of white people however, is still slightly higher than we would expect (particularly when considering the other countries surveyed) - and this could perhaps highlight a structural preference towards white people in the work place in the United States. 
 
-```{r}
-salary_data <- clean_data %>%
-  mutate
-```
+
+The analysis above has highlighted some of the bias in our dataset that needs to be considered in our analysis. We have a disproportionately high number of females, as well as biases towards white college educated people who live in the United States. This bias can be explained by the target audience of the "Ask A Manager" survey itself, but needs to be considered in the analysis of this data set.
+
+
+
+### Section 2.1 - Exploring the dependent variable and its relations.
+
+
+
 
 
 
