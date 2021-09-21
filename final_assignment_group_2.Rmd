@@ -12,7 +12,7 @@ output: html_document
 
 We begin by importing the following libraries to aid our analysis...
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 library(googlesheets4)
 library(tidyverse)
 library(janitor) 
@@ -32,7 +32,7 @@ library(see)
 
 Next, we use googlesheets4 to gain authorization to the "Ask a Manager 2021 survey" data sheet. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Use googlesheets4 to get data
 url <- "https://docs.google.com/spreadsheets/d/1IPS5dBSGtwYVbjsfbaMCYIWnOuRmJcbequohNxCyGVw/edit?resourcekey#gid=1625408792"
 googlesheets4::gs4_auth() # google sheets authorisation
@@ -40,14 +40,14 @@ googlesheets4::gs4_auth() # google sheets authorisation
 
 We subsequently assign the raw data to a new variable (ask_a_manager_2021), which we then skim to view a summary of the data - this includes the size of the dataset, as well as the variable types amongst other information. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # load "Ask a A Manager 2021 Survey" googlesheet
 # https://www.askamanager.org/
 ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>% 
   janitor::clean_names()
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 skimr::skim(ask_a_manager_2021)
 ```
 
@@ -61,7 +61,7 @@ We begin by cleaning the "country" variable. This involves using standardised 'c
 
 Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change occurrences of "England" to "UK". We ignore misspellings, as they only represent a small portion of the data set. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Clean specific country names so that they can be recognised by iso3 countrycode. 
 ask_a_manager_2021$country <- gsub("England", "UK", ask_a_manager_2021$country)
 ask_a_manager_2021$country <- gsub("Scotland", "UK", ask_a_manager_2021$country)
@@ -74,7 +74,7 @@ ask_a_manager_2021$country <- gsub("America", "USA", ask_a_manager_2021$country)
 
 Now that we have completed this, we can apply the country code to standardise the names of the country variables. These can be found in a new column "Country", within the ask_a_manager_2021 data frame. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Clean "country"
 # Use countrycode::countryname() to clean country names
 salary_iso3 <- ask_a_manager_2021 %>% 
@@ -94,7 +94,7 @@ colnames(ask_a_manager_2021)[19] <- "Country"
 
 Next, we create a new dataframe by selecting the columns (variables) that are most suitable for analysis. For example, this involves omitting the column `additional_context_on_job_title`. This column contains little information that is appropriate for statistical analysis. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Create a new dataframe for the desired data
 clean_data <- ask_a_manager_2021 %>% 
   select(how_old_are_you, industry, currency,Country,state,city,overall_years_of_professional_experience,years_of_experience_in_field,highest_level_of_education_completed,gender,race,other_monetary_comp,annual_salary) 
@@ -102,7 +102,7 @@ clean_data <- ask_a_manager_2021 %>%
 
 We repeat the procedure we used to clean the country data for the states - using a standardised code and correcting for any anomalies that cannot be picked up by this standardisation. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Clean "states" so that they can be recognised by specific state code. 
 clean_data$state <- gsub("District of Columbia, Virginia", "Virginia", clean_data$state)
 clean_data$state <- gsub("District of Columbia, Maryland", "Maryland", clean_data$state)
@@ -111,7 +111,7 @@ clean_data$state <- gsub("District of Columbia, Washington", "Maryland", clean_d
 
 The state names are standardised as follows, using the abbreviations taken from the following wikipedia page. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Use state abbreviations to categorise state entries
 url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States"
 
@@ -141,7 +141,7 @@ states_data[46,1] <- "Virginia"
 
 The cleaned state variable is joined to the 'clean_data' data frame. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Bind the state abbreviation column in to clean_data
 clean_data <- clean_data %>%
   left_join(states_data, by="state")
@@ -150,7 +150,7 @@ clean_data <- clean_data %>%
 
 We can confirm the state cleaning has worked by counting the state abbreviations column - this has 51 entries - the 50 states + NA entries (which arise due to the large number of people completing this survey who live outside of America, as well as those who live in the District of Columbia which is not registered as a state). 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 temp <- clean_data[is.na(clean_data$state_abb),]
 temp2 <- clean_data %>% 
   count(state_abb, sort = TRUE)
@@ -160,7 +160,7 @@ temp2
 
 The gender variable is cleaned by adding entries with "Prefer not to answer" to the "Other or prefer not to answer" group. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Clean "gender"
 clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
 clean_data$gender <- gsub("Non-binary", "Other or prefer not to answer", clean_data$gender)
@@ -169,7 +169,7 @@ clean_data$gender <- gsub("Non-binary", "Other or prefer not to answer", clean_d
 
 The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most-common) industries. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Clean "industry"
 clean_data$industry <- gsub("Pharmaceuticals", "Pharma", clean_data$industry)
 clean_data$industry <- gsub("Pharmaceutical", "Pharma", clean_data$industry)
@@ -210,7 +210,7 @@ clean_data$industry <- gsub("manufacturing", "Manufacturing", clean_data$industr
 
 The "city" data is also cleaned manually, this is done by grouping repeated names of the same city - for instance "New York", "New York City", "NYC" are all grouped as "NY". We clean data for all cities that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most lived in) cities. For example - when comparing the average salaries of people who live in New York with those who live in Washington - further cleaning of city data with n < 5 items will not largely impact this comparison.  
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Clean City Data (clean all cities with n >= 5)
 clean_data$city <- gsub("New York City", "NY", clean_data$city)
 clean_data$city <- gsub("New York", "NY", clean_data$city)
@@ -274,7 +274,7 @@ clean_data$city <- gsub("washington dc", "DC", clean_data$city)
 
 We follow this by cleaning the 'race' variable, once again aggregating similar/comparable occurrences of the same ethnicity to create a more transparent data set. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 clean_data$race <- gsub("Asian or Asian American", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian or Asian American, Another option listed here or prefer not to answer", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian or Asian American, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
@@ -296,7 +296,7 @@ clean_data$race <- gsub("Hispanic, Other", "Hispanic", clean_data$race)
 
 Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some people also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 clean_data <- clean_data %>% 
   #remove 'other' currencies
   filter(clean_data$currency != "Other") 
@@ -323,7 +323,7 @@ clean_data <- clean_data %>%
 
 Now we will fetch the most recent exchange rates and create a table with them.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #get live exchange rates
 from <- c(clean_data$currency)
 to <- c("USD")
@@ -335,7 +335,7 @@ quotes <- quotes %>%
 
 We subsequently left join the two tables...
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #join quotes table with bigger table according to the currency
 clean_data <- clean_data %>% 
   left_join(quotes, by="currency") 
@@ -343,12 +343,12 @@ clean_data <- clean_data %>%
 
 ... and multiply the total earnings by the exchange rate to get the currency-converted total earnings in USD.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 clean_data <- clean_data %>% 
   mutate(tot_earnings_USD = total_earnings*Last) 
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Examining the top currencies to ensure the data has been cleaned sufficiently.
 temp5 <- clean_data %>% 
   count(currency, sort=TRUE) 
@@ -358,7 +358,7 @@ temp5
 
 At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. Finally, we omit the unnecessary variables: 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 clean_data <- clean_data %>% 
   select(how_old_are_you, industry, currency, Country, state_abb, city, overall_years_of_professional_experience, years_of_experience_in_field, highest_level_of_education_completed, gender, race, annual_salary ,tot_earnings_USD) 
 ```
@@ -372,7 +372,7 @@ clean_data <- clean_data %>%
 
 Now that we have cleaned the data set, we can begin exploring it. We will start this process by looking individually at the different independent variables - determining the main components that make up each variable in the cleaned data set, as well as what proportion they represent. This allows us to better understand the characteristics of our sample, and draw some initial conclusions about why the data is distributed the way that it is. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # We begin by counting the number of participants in different age groups...
 prop_age <- clean_data %>% 
   count(how_old_are_you) %>% 
@@ -401,7 +401,7 @@ As we can see here, the majority of people surveyed fall into the age bracket of
 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Next we count the number of people in different industries... this time there are too many categories, so we group industries with <500 workers into 'Other'
 
 prop_industry <- clean_data %>% 
@@ -432,7 +432,7 @@ ggplot(df2, aes(x="", y=Value, fill=Group))+
 As we can see, there is a fairly balanced distribution of industries, with the most common being Computing/Tech, education and (surprisingly) non-profit. The balanced spread of data between industries should allow for a fairly unbiased comparison of the salaries by industry later in this project. 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # We display the country data in a similar way, grouping countries that have less than 200 respondents as 'other'...
 
 prop_country <- clean_data %>% 
@@ -464,7 +464,7 @@ The pie chart above shows that a huge proportion of our respondents come from th
 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # We repeat this process again to explore the 'state' variable, this time we remove NA's and group states that have less than 350 respondents as 'other'...
 
 prop_state <- clean_data %>% 
@@ -495,7 +495,7 @@ ggplot(df4, aes(x="", y=Value, fill=Group))+
 The figure above shows that there is a disproportionate number of respondents living in states such as CA, NY and WA. This is expected however, as these states have some of the largest cities in the USA and some of the better-paid 'managerial' jobs. 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Now we explore the 'city' variable... any city with less than 500 people is grouped into 'other'
 
 prop_city <- clean_data %>% 
@@ -526,7 +526,7 @@ ggplot(df5, aes(x="", y=Value, fill=Group))+
 As we can see there is a huge variation in the location (city) of respondents. For this reason, it will be difficult to compare data between cities that are not in the top 5-10 shown above. 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # We now explore the variable - 'overall_years_of_experience' ...
 prop_totalexp <- clean_data %>% 
   count(overall_years_of_professional_experience) %>% 
@@ -551,7 +551,7 @@ This graph above shows that the majority of our respondents have less than 20 ye
 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # We now explore the variable - 'years of experience within specific field' ...
 prop_fieldexp <- clean_data %>% 
   count(years_of_experience_in_field) %>% 
@@ -574,7 +574,7 @@ ggplot(df7, aes(x="", y=Value, fill=Group))+
 Here we see that almost nobody has more than 20 years of sector specific experience - once again we expect these results, as the average number of years of sector specific experience should almost certainly be less than the average number of years of total experience. 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Education Level ...
 prop_education <- clean_data %>% 
   count(highest_level_of_education_completed) %>% 
@@ -597,7 +597,7 @@ ggplot(df8, aes(x="", y=Value, fill=Group))+
 The results for education highlight the fact that a disproportionate number of our respondents hold some form of degree (Master's or College). This is not representative of the global population, or even the population of the United States. This bias is expected within the data, as the survey is targeted towards people in 'managerial' roles - typically, we would expect these people to be more likely to have a degree. 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Gender ...
 prop_gender <- clean_data %>% 
   count(gender, na.rm = TRUE) %>% 
@@ -621,7 +621,7 @@ As this survey is targeted towards females, we have a particularly biased data s
 
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # Finally, we explore the variable 'race' - in this instance, we group any ethnicity with n < 200 as 'Other'...
 
 prop_race <- clean_data %>% 
@@ -661,16 +661,16 @@ The analysis above has highlighted some of the bias in our dataset that needs to
 ### Section 3.1 Gender pay inequality accross age groups in UK
 First, let's look at the gender pay gap within UK for each age groups.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #prepare dataframe for comparison
 pay_gender_uk <- clean_data %>% 
   filter(Country == "GBR") %>% 
   select(how_old_are_you, gender, tot_earnings_USD) %>% 
   filter(gender=="Woman" | gender=="Man") %>% 
   group_by(how_old_are_you, gender) %>% 
-  summarise(median_pay = median(tot_earnings_USD)) %>% 
+  summarise(mean_pay = mean(tot_earnings_USD)) %>% 
   pivot_wider(names_from = gender, 
-              values_from = median_pay) %>% 
+              values_from = mean_pay) %>% 
   mutate(pay_gap = Man - Woman)
 
 pay_gender_uk %>% 
@@ -684,11 +684,11 @@ pay_gender_uk %>%
 The graph exhibits that men earns more than women across all age groups. This is probably because of the fact that males take more senior roles than females as these jobs is highly associated with high working hours, which has been shown to be inherently gendered ([Gascoigne et al. 2015](https://journals.sagepub.com/doi/abs/10.1177/1350508415572511)). 
 
 And it seems that throughout the lifetime, as people grow older, the gender pay gap becomes more significant except for age group 45-54. 
-- The gender pay gap is relatively small for the age group 18-24.
+- Women seems to be earning more than men for the age group 18-24.
 - The gap continues to increase. This is probably because that women take up more caring responsibilities for children and have more part-time jobs as they grow older. However, we 
 - For age group 45-54, the result seems to be unexpected, therefore we look a bit further as follows.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #prepare the dataframe for the violin plot
 var_gender_uk <- clean_data %>% 
   filter(Country == "GBR") %>% 
@@ -724,7 +724,7 @@ In this case, our null hypothesis is that the mean of earnings between man and w
 $H_0: \overline{x_1} = \overline{x_2}$
 
 First, let's produce and take a look at the density chart. 
-```{r ci_hypothesis_age_salary}
+```{r, warning=FALSE, message=FALSE}
 #prepare dataframe for comparison
 salary_gender_uk <- clean_data %>% 
   filter(Country == "GBR" & how_old_are_you=="18-24") %>% 
@@ -741,15 +741,15 @@ salary_gender_uk_wider <- salary_gender_uk %>%
   pivot_wider(names_from = gender, 
               values_from = tot_earnings_USD_log)
 
-#calculate the median for each of the gender group
-median_woman <- salary_gender_uk_wider %>% 
+#calculate the mean for each of the gender group
+mean_woman <- salary_gender_uk_wider %>% 
   filter(!is.na(Woman)) %>% 
   pull(Woman) %>% 
-  median()
-median_man <- salary_gender_uk_wider %>% 
+  mean()
+mean_man <- salary_gender_uk_wider %>% 
   filter(!is.na(Man)) %>% 
   pull(Man) %>% 
-  median()
+  mean()
   
 #make mirror density chart
 salary_gender_uk_wider %>% ggplot(aes(x=x) ) +
@@ -761,16 +761,16 @@ salary_gender_uk_wider %>% ggplot(aes(x=x) ) +
   geom_density( aes(x = Man, y = -..density..), fill= "#404080", alpha = 0.3) +
   geom_label( aes(x=4.5, y=-0.25, label="Man"), color="#404080") +
   
-  #Add median point for both gender groups
-  geom_point(aes(x=median_woman, y=0.01), size=1.5, colour="#69b3a2")+
-  geom_point(aes(x=median_man, y=-0.01), size=1.5, colour="#404080")+
+  #Add mean point for both gender groups
+  geom_point(aes(x=mean_woman, y=0.01), size=1.5, colour="#69b3a2")+
+  geom_point(aes(x=mean_man, y=-0.01), size=1.5, colour="#404080")+
   labs(title = "Mirror density plot of the two gender groups in age 18-24 in UK",x = "Log of salary", y = "Density")
 
 ```
 
-We can see from the mirror density chart above that the density chart for man is more left-skewed than that for woman. And the median of salary for man is higher. However, is it statistically significant that on average, men earn more than women in this age group? Let's produce and look at the confidence intervals plot. 
+We can see from the mirror density chart above that the density chart for man is more left-skewed than that for woman. And the mean of log salary for woman is higher. However, is it statistically significant that on average, men earn significantly differently from women in this age group? Let's produce and look at the confidence intervals plot. 
 
-```{r ci_hypothesis_age_salary}
+```{r, warning=FALSE, message=FALSE}
 #calculate man and woman confidence intervals for the age group 18-24
 salary_gender_comparison <- salary_gender_uk %>% 
   group_by(gender) %>% 
@@ -793,7 +793,7 @@ salary_gender_comparison %>%
   geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
   geom_point(aes(x=mean_salary, y=gender), size=3)+
   geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
-  labs(title="Do UK man aged 18-24 earn more than woman in the same age group?",
+  labs(title="Do UK woman aged 18-24 earn more than woman in the same age group?",
        subtitle = "95% confidence intervals overlap",
        x = "Mean log of annual earnings",
        y = "Gender",
@@ -802,7 +802,7 @@ salary_gender_comparison %>%
 
 From the graph we can see that the confidence intervals overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #calculate the t-stats for gender pay gap in the age group of 18-24
 t.test(tot_earnings_USD_log ~ gender, data = salary_gender_uk)
 ```
@@ -811,7 +811,7 @@ We can see that the $|t-stat| < 2$ and $|p-value| > 0.05$. We still cannot rejec
 
 ### Section 3.2 Gender pay inequality across industries in US
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #top 10 industries in UK
 top_10_industry <- clean_data %>% 
   filter(Country == "USA") %>% 
@@ -847,7 +847,7 @@ pay_industry_uk %>%
        x="Industry",
        y="Pay gap (women's - men's)",
        fill="Industry") +
-  theme(legend.position="bottom") +
+  theme(legend.position="right") +
   coord_flip()
 ```
 
@@ -859,7 +859,7 @@ In this case, our null hypothesis is that the mean of earnings between man and w
 
 $H_0: \overline{x_1} = \overline{x_2}$
 
-```{r ci_hypothesis_age_salary}
+```{r, warning=FALSE, message=FALSE}
 #calculate the log
 mkt_gender_uk <- top_10_clean_data %>% 
   filter(industry == "Publishing") 
@@ -895,28 +895,41 @@ ci_mkt_gender_uk %>%
 
 From the graph we can see that the confidence intervals overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #calculate the t-stats for gender pay gap in the hospitality and events industry
 t.test(tot_earnings_USD_log ~ gender, data = mkt_gender_uk)
 ```
 
-We can judge from above results that we cannot reject the null hypothesis $H_0$. Therefore, although on average, women earn more than men in **"Marketing, Advertising & PR"** sector, it is still not significant that men and women earn differently in statistical sense. 
+We can judge from above results that we cannot reject the null hypothesis $H_0$. Therefore, although on average, women earn more than men in **"Publishing"** sector, it is still not significant that men and women earn differently in statistical sense. 
 
-### Section 3.3 Race
-```{r}
+## Section 3.3 Race vs. total earnings
+
+Now we will investigate on the relationship between race and their earnings.
+
+```{r,=,warning=FALSE,message=FALSE}
 clean_data %>% 
+  #Filter out the outliers
   filter(tot_earnings_USD<300000) %>% 
   drop_na(race) %>% 
+  #Here the mixed races are not taken into account
+  filter(race == c("White","Black","Hispanic","Asian")) %>% 
   ggplot(aes(x = race,y = tot_earnings_USD))+
   geom_boxplot()+
   labs(title = "Total earning of different races",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
        x = "Race",
-       y = "Total earnings in USD")
+       y = "Total earnings in USD")+
+  theme_bw()+
+  NULL
   
 ```
-```{r}
+Some statistical results calculated using formula...
+
+```{r,warning=FALSE,message=FALSE}
 earning_race <- clean_data %>% 
+  filter(race == c("White","Black","Hispanic","Asian")) %>% 
+  # Outlier
+  filter(tot_earnings_USD < 10000000) %>% 
   group_by(race) %>% 
   summarise (mean = mean(tot_earnings_USD), SD = sd(tot_earnings_USD), sample_size = n()) %>% 
   mutate(se = sqrt(SD^2/sample_size), t_value = qt(p=.05/2, df=sample_size-1, lower.tail=FALSE),
@@ -924,34 +937,43 @@ earning_race <- clean_data %>%
 
 earning_race
 ```
-```{r}
+
+It can be seen here that Hispanic people have the highest mean earning while White people have the lowest. However, the sample size of White is a lot larger than the other ones, which makes its statistics more predictive. As for the difference in earnings among these race groups, it can be explained by the fact that the Asian and Hispanic who filled this survey are most likely foreign employees in the US, as the majority of people who filled this survey is from the US. They are likely to be more highly skilled than the local Americans, which can explain the difference in earnings. 
+
+To find out about whether races do mark a significant difference in people's earnings, t tests are used to compare earnings between groups of two races. The null hypothesis is that race is not indicative for earnings.
+
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
 t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","Black")))
 ```
-```{r}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
 t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","White")))
 ```
-```{r}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","Hispanic")))
+t.test(tot_earnings_USD ~ race, data = clean_data %>% 
+         filter(race %in% c("Asian","Hispanic")) %>% 
+         filter(tot_earnings_USD <10000000))
 ```
-```{r}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("White","Black")))
+t.test(tot_earnings_USD ~ race, 
+       data = clean_data %>% filter(race %in% c("White","Black")))
 ```
-```{r}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("White","Hispanic")))
+t.test(tot_earnings_USD ~ race, 
+       data = clean_data %>% filter(race %in% c("White","Hispanic")))
 ```
-```{r}
+```{r,warning=FALSE,message=FALSE}
 # hypothesis testing using t.test() 
-t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Hispanic","Black")))
+t.test(tot_earnings_USD ~ race, 
+       data = clean_data %>% filter(race %in% c("Hispanic","Black")))
 ```
-* From the above analysis, it can be seen that the largest pay gap exists between White and Asian. To further visualise the difference, a confidence interval plot is created.
+From the above analysis, it can be seen that the largest pay gap exists between White and Asian. To visualise the difference, a confidence interval plot is created.
 
-```{r, hypothesis_testing}
-
+```{r, hypothesis_testing,,warning=FALSE,message=FALSE}
 
 # hypothesis testing using infer package
 set.seed(1234)
@@ -984,32 +1006,42 @@ percentile_ci <- earning_race_boot %>%
 percentile_ci
 ```
 
-```{r}
-observed_difference <- earning_race$mean[1]-earning_race$mean[2]
+```{r,warning=FALSE,message=FALSE}
+#Calculate the difference in the mean earnings between Asian and White
+observed_difference <- earning_race$mean[1]-earning_race$mean[4]
 observed_difference
 ```
 
-* The difference between the earning of these two races is not within the 95% confidence interval generated by bootstrap.
+The difference between the earning of these two races is not within the 95% confidence interval generated by bootstrap.
 
-```{r}
+```{r,warning=FALSE,message=FALSE}
 visualize(earning_race_boot) + 
   annotate("rect", xmin=percentile_ci$lower_ci, xmax=percentile_ci$upper_ci, ymin=0, ymax=Inf, alpha=0.3, fill = "pink") +
   #shade_ci(endpoints = percentile_ci,fill = "khaki")+
-  labs(title='Differences in White and Asian Mean Salary in a world where there is no difference', 
+  labs(title='Differences in White and Asian Mean Salary in a world 
+       where there is no difference', 
        subtitle = "Observed difference marked in red",
-       x = "Mean (White salary - Asian salary)", y = "Count")+
-  geom_vline(xintercept = observed_difference, colour = "red", linetype="solid", size=1.2)+
+       x = "Mean (salary of Asian- salary of White)", y = "Count")+
+  geom_vline(xintercept = observed_difference, colour = "red",
+             linetype="solid",
+             size=1.2)+
   theme_bw()+
   NULL
   
 ```
 
-### Section 3.4 Education
-```{r}
+It can be seen in the above diagram that the observed difference for earnings between these two races are out of the 95% CI generated by bootstrap. This means that Asian people do make more than White people. However,we will have to look at the difference in background between these two races before we can conclude that it is "race" alone that leads to the difference in earnings.
+
+Judging by the mean values in earning_race, White and Hispanic have the largest difference in earnings, while in the t-test they are not significantly different. This may be because that the sample size of Asian group is so small that its standard error is very big, therefore the CI includes the mean value for White.
+
+### Section 3.4 Education vs. total earnings
+
+```{r,warning=FALSE,message=FALSE}
 clean_data %>% 
   filter(tot_earnings_USD<300000) %>% 
   drop_na(highest_level_of_education_completed) %>% 
-  ggplot(aes(x = tot_earnings_USD, y = fct_reorder(highest_level_of_education_completed,tot_earnings_USD)))+
+  ggplot(aes(x = tot_earnings_USD, 
+             y = fct_reorder(highest_level_of_education_completed,tot_earnings_USD)))+
   geom_boxplot()+
   labs(title = "Total earning of people with different education level",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
@@ -1017,13 +1049,86 @@ clean_data %>%
        y = "Highest level of education")
   
 ```
+It can be seen in the box plot that as the level of education increases, people tend to make more (except for "Some College"). The closest boxes are Master's degree and College degree, and to confirm they are significantly different, a bootstrap analysis is used. The reason why people with "Some College" background make the highest mean earnings is probably because people who drop out of college may have started a business of their own and made success out of it.
 
-### Section 3.5 Experience
-```{r}
+```{r, message=FALSE,warning=FALSE}
+#Construct a table that contains statistical parameters for different education levels
+earning_edu <- clean_data %>% 
+  group_by(highest_level_of_education_completed) %>% 
+  summarise (mean = mean(tot_earnings_USD), SD = sd(tot_earnings_USD), sample_size = n()) %>% 
+  mutate(se = sqrt(SD^2/sample_size), t_value = qt(p=.05/2, df=sample_size-1, lower.tail=FALSE),
+         margin_of_error = t_value*se, earning_low = mean-t_value*se, earning_high = mean+t_value*se) %>% 
+  arrange(desc(mean))
+
+earning_edu
+```
+
+```{r, hypothesis_testing,,warning=FALSE,message=FALSE}
+
+
+# hypothesis testing using infer package
+set.seed(1234)
+
+earning_edu_boot <- clean_data %>% 
+  drop_na(highest_level_of_education_completed) %>% 
+  filter(highest_level_of_education_completed %in% c("College degree","Master's degree")) %>% 
+  # Specify the variable of interest "tot_earnings_USD" and group by race "Asian" and "White"
+  specify(tot_earnings_USD ~ highest_level_of_education_completed) %>% 
+  
+  # Hypothesize a null of no (or zero) difference
+  hypothesize (null = "independence") %>% 
+  
+  # Generate a bunch of simualted samples
+  generate (reps = 1000, type = "permute") %>% 
+  
+  # Find the mean diffference of each sample
+  calculate(stat = "diff in means",
+            order = c("Master's degree", "College degree"))
+
+
+# Select the low and high endpoint from the formula-calculated CIs
+formula_ci_edu <- earning_edu %>%
+  select(earning_low,earning_high)
+
+# Generate 95% percentile of the difference in the two genders' salaries from the bootstrap data
+percentile_ci_edu <- earning_edu_boot %>% 
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+percentile_ci_edu
+```
+
+```{r,warning=FALSE,message=FALSE}
+#Calculate the difference in the mean earnings between Master's and College
+observed_difference_edu <- earning_edu$mean[5]-earning_edu$mean[6]
+observed_difference_edu
+```
+
+The difference between the earning of these two races is not within the 95% confidence interval generated by bootstrap.
+
+```{r,warning=FALSE,message=FALSE}
+visualize(earning_edu_boot) + 
+  annotate("rect", xmin=percentile_ci_edu$lower_ci, xmax=percentile_ci_edu$upper_ci, ymin=0, ymax=Inf, alpha=0.3, fill = "pink") +
+
+  labs(title="Differences in Masters' and Bachelors' Mean Salary in a world where there is no difference", 
+       subtitle = "Observed difference marked in red",
+       x = "Mean (salary of Masters- salary of Bachlors)", y = "Count")+
+  geom_vline(xintercept = observed_difference_edu, colour = "red",
+             linetype="solid",
+             size=1.2)+
+  theme_bw()+
+  NULL
+  
+```
+The observed difference is out of the CI region, which means that getting a Master's degree does help people make more compared to a College degree.
+
+### Section 3.5 Experience vs. total earnings
+
+```{r,warning=FALSE,message=FALSE}
 clean_data %>% 
   filter(tot_earnings_USD<300000) %>% 
   drop_na(overall_years_of_professional_experience) %>% 
-  ggplot(aes(x = tot_earnings_USD, y = fct_reorder(overall_years_of_professional_experience,tot_earnings_USD)))+
+  ggplot(aes(x = tot_earnings_USD, 
+             y = fct_reorder(overall_years_of_professional_experience,tot_earnings_USD)))+
   geom_boxplot()+
   labs(title = "Total earning of people with difference oveall experience",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
@@ -1031,13 +1136,65 @@ clean_data %>%
        y = "Overall experience")
   
 ```
+```{r, message=FALSE,warning=FALSE}
+#Construct a table that contains statistical parameters for different years of experience
+earning_exp <- clean_data %>% 
+  group_by(overall_years_of_professional_experience) %>% 
+  summarise (mean = mean(tot_earnings_USD), SD = sd(tot_earnings_USD), sample_size = n()) %>% 
+  mutate(se = sqrt(SD^2/sample_size), t_value = qt(p=.05/2, df=sample_size-1, lower.tail=FALSE),
+         margin_of_error = t_value*se, earning_low = mean-t_value*se, earning_high = mean+t_value*se) %>% 
+  arrange(desc(mean))
 
+earning_exp
+```
+Unlike education level, working for a longer time does not guarantee a higher earning. The highest mean observed is for the group of 21 - 30 years of work experience, while people who worked for 41 years or more only ranked the 5th. While having more experience does not necessarily mean that the earnings will be higher, the original dataset is dominated by the younger groups. For example, there are only 117 samples in the "41 years or more" group, while we have 9259 samples in the "11 - 20 years" group. Therefore, we cannot conclude confidently that people who have more experience make less than people who have less experience.
+
+Now we can run t tests for each increment in experience to see at which stage of career are people more likely to gain a significant increase in their earnings.
+
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("1 year or less","2 - 4 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("2 - 4 years","5-7 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("5-7 years","8 - 10 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("8 - 10 years","11 - 20 years")))
+
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("11 - 20 years","21 - 30 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("21 - 30 years","31 - 40 years")))
+```
+```{r,warning=FALSE,message=FALSE}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ overall_years_of_professional_experience, 
+       data = clean_data %>% filter(overall_years_of_professional_experience %in% c("31 - 40 years","41 years or more")))
+```
+
+As the years of experience increases, the increase in mean earnings is not necessarily significant. In other words, people's earning does not always increase significantly when they work longer. The only two significant differences in earnings are observed from 2 - 4 years to 5 - 7 years and from 11 - 20 years to 21 - 30 years. Based on this finding, people are likely to have a significant gain in thier earnings at the middle stages of their career. Also, since people with longer experience already make a lot more than they do at their early stages of career, the relative increase in their earnings will be not as evident. Again, the sample is heavily biased towards the people at middle stages of career, so it is expected that people with 30+ years of experience will have a large SE, thus large CI that makes the increase in earnings appear less significant.
 
 ## Section 4 - Analysis using Correlation and Linear Regression
 
 
 Delete the chunks below if you want to... 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # How is salary distributed?
 
 ggplot(clean_data, aes(x=tot_earnings_USD))+
@@ -1048,7 +1205,7 @@ ggplot(clean_data, aes(x=tot_earnings_USD))+
   stat_ecdf()
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 # what about log(salary)? 
 ggplot(clean_data, aes(x=log(tot_earnings_USD)))+
   geom_density()
@@ -1060,18 +1217,18 @@ ggplot(clean_data, aes(x=log(tot_earnings_USD)))+
 
 Seeing these graphs, it is probably optimal to use the log of total earnings (USD) as it is more normally distributed.
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 regression_data <- clean_data %>% 
   
   na.omit()
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 regression_data <- regression_data[regression_data$tot_earnings_USD != 0,] %>% 
   mutate(log_earnings = log(tot_earnings_USD)) 
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 model_1 <- lm(log_earnings ~ how_old_are_you + overall_years_of_professional_experience +
      years_of_experience_in_field, data = regression_data)
 
@@ -1080,26 +1237,26 @@ model_1 %>% get_regression_summaries()
 ```
 
 Education variable is also slightly cleaned to make things easier in the regression
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #Clean "education"
 #add new dataframe for this
 clean_data$highest_level_of_education_completed <- gsub("Some college", "College degree", clean_data$highest_level_of_education_completed)
 clean_data$highest_level_of_education_completed <- gsub("Professional degree (MD,JD, etc.)", "Master's degree", clean_data$highest_level_of_education_completed)
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 regression_data_dummies <- regression_data %>% 
   dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race"))
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_Master's degree"] <- "highest_level_of_education_completed_Masters_degree"
 names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_College degree"] <- "highest_level_of_education_completed_College_degree"
 names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_High School"] <- "highest_level_of_education_completed_High_School"
 ```
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 model_2 <- lm(log_earnings ~ how_old_are_you + overall_years_of_professional_experience +
      years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
@@ -1107,12 +1264,12 @@ model_2 %>% get_regression_table()
 model_2 %>% get_regression_summaries()
 ```
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 car::vif(model_2)
 ```
 
 Since overall years of professional experience has very high multicollinearity, we remove it in order to improve this
-```{r}
+```{r, warning=FALSE, message=FALSE}
 model_3 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
 #
@@ -1120,19 +1277,19 @@ model_3 %>% get_regression_table()
 ```
 
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 #
 model_3 %>% get_regression_summaries()
 ```
 
 It worked! No more VIF problems.
-```{r}
+```{r, warning=FALSE, message=FALSE}
 car::vif(model_3)
 ```
 
 Now we will see if being in a certain country or industry has a significant effect or not (using top ten industries and a few selected countries)
 
-```{r}
+```{r, warning=FALSE, message=FALSE}
 top_10_dummies <- top_10_clean_data %>% 
   dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race", "Industry", "Country"))
   
