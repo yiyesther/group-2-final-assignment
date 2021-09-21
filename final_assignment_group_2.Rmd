@@ -365,71 +365,85 @@ clean_data <- clean_data %>%
 
 
 
+
+
+
+
 ## Section 2 - Graphically summarising and exploring the Data.
 
 ### Section 2.1 - Exploration of the Independent Variables
 
-Now that we have cleaned the data set, we can begin exploring it. We will start this process by looking individually at the different independent variables - determining the main components that make up each variable in the cleaned data set, as well as what proportion they represent. This allows us to better understand the characteristics of our sample, and draw some initial conclusions about why the data is distributed the way that it is. 
+Now that we have cleaned the data set, we can begin exploring it. We will start this process by looking individually at the different independent variables - determining the main components that make up each variable in the cleaned data set, as well as what proportion they represent. This allows us to better understand the characteristics of our sample, and draw some initial conclusions about why the data is distributed the way that it is. We begin by analysing the different age groups in our cleaned data.
 
 ```{r, warning=FALSE, message=FALSE}
 # We begin by counting the number of participants in different age groups...
 prop_age <- clean_data %>% 
   count(how_old_are_you) %>% 
+  # Calculate the proportion below:
   mutate(percent = 100* n/sum(n))
 
+# Set up data frame for pie-chart
 df1 <- data.frame(
   Group = prop_age$how_old_are_you,
   Value = prop_age$percent
 )
 
-#Constructing a pie chart...
-ggplot(df1, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
-  coord_polar(theta = "y") + 
-  theme_void() + 
-  labs(title="Percentage of Surveyed people within each age category")
-# add percentage mark and change labels
-  
-  #geom_text(aes(x=1.05*sin(middle), y=1.05*cos(middle),label = Value,
-                #hjust = hjust, vjust = vjust))
+# The code below allows us to change the positions of our labels.
+positions1 <- df1 %>%
+  mutate(csum = rev(cumsum(rev(Value))), 
+         pos = Value/2 + lead(csum,1), 
+         pos = if_else(is.na(pos), Value/2, pos))
 
+#Constructing the pie chart...
+ggplot(df1, aes(x="", y=Value, fill=Group))+ 
+  geom_col(width = 1, color = "black")+
+  coord_polar(theta = "y") + 
+  geom_label_repel(data = positions1,
+                   aes(y = pos, label = paste0(format(round(Value,2), nsmall=2), "%")),
+                   size = 4.5, nudge_x = 1, show.legend = FALSE) +
+  theme_void() + 
+  labs(title="Percentage [%] of surveyed people within each Age Category.")
 ```
 
-As we can see here, the majority of people surveyed fall into the age bracket of 25-44. Given that 'managers' were the target audience of this survey, we would not expect to see many respondents below this age group, and this is confirmed by the chart above. It is however, somewhat surprising that we don't see as many senior executives (between the ages of 45-64) complete the survey - this is something that we may want to factor into our analysis.  
+As we can see here, the majority of people surveyed fall into the age bracket of 25-44. Given that 'managers' were the target audience of this survey, we would not expect to see many respondents below this age group, and this is confirmed by the chart above. Less than 4% of respondents were under the age of 25. It is however, somewhat surprising that we don't see as many senior executives (between the ages of 45-64) complete the survey - this is something that we may want to factor into our analysis.  
 
-
+Next we examine the 'industry' variable - in this case we plot a bar chart as it makes it easier to visualise the dominant industries. 
 
 ```{r, warning=FALSE, message=FALSE}
-# Next we count the number of people in different industries... this time there are too many categories, so we group industries with <500 workers into 'Other'
+# We count the number of people in different industries... this time there are too many categories, so we group industries with <1000 workers into 'Other'
 
 prop_industry <- clean_data %>% 
-  count(industry, sort=TRUE, na.rm = TRUE)
-prop_industry$industry <- ifelse(prop_industry$n < 500, "Other", prop_industry$industry)
+  count(industry, na.rm = TRUE)
 
+prop_industry$industry <- ifelse(prop_industry$n < 1000, "Other", prop_industry$industry)
 prop_industry2 <- aggregate(prop_industry$n, by=list(industry=prop_industry$industry), FUN=sum)
 
 prop_industry2 <- prop_industry2 %>%
-  mutate(percent = 100* x/sum(x)) %>%
-  arrange(percent)
-#prop_industry2
+  mutate(percent = 100* x/sum(x)) 
 
+# Set up data frame for bar chart
 df2 <- data.frame(
   Group = prop_industry2$industry,
   Value = prop_industry2$percent
 )
 
-#Constructing a pie chart...
-ggplot(df2, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
-  coord_polar(theta = "y") + 
-  theme_void() + 
-  labs(title="Percentage of Surveyed people within each industry")
+df2$Group <- factor(df2$Group, levels = df2$Group[order(df2$Value, decreasing=TRUE)])
+
+df2 %>%
+  # Plotting the bar (col) chart
+  ggplot(aes(x=Group, y=Value, fill=Group)) +
+  geom_col() +
+  labs(title="Percentage [%] of surveyed respondents \nwithin each Industry",
+       x="Industry",
+       y="Percentage [%]",
+       fill="Group")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
 ```
 
-As we can see, there is a fairly balanced distribution of industries, with the most common being Computing/Tech, education and (surprisingly) non-profit. The balanced spread of data between industries should allow for a fairly unbiased comparison of the salaries by industry later in this project. 
+As we can see, there is a fairly balanced distribution of industries, with the most common being Computing/Tech, education and (surprisingly) non-profit. The balanced spread of data between industries should allow for a fairly unbiased comparison of the salaries by industry.
 
+Now we examine the 'Country' variable (this is done with a pie chart)...
 
 ```{r, warning=FALSE, message=FALSE}
 # We display the country data in a similar way, grouping countries that have less than 200 respondents as 'other'...
@@ -441,58 +455,67 @@ prop_country$Country <- ifelse(prop_country$n < 200, "Other", prop_country$Count
 prop_country2 <- aggregate(prop_country$n, by=list(Country=prop_country$Country), FUN=sum)
 
 prop_country2 <- prop_country2 %>%
-  mutate(percent = 100* x/sum(x)) %>%
-  arrange(percent)
-#prop_country2
+  mutate(percent = 100* x/sum(x))
+
 
 df3 <- data.frame(
   Group = prop_country2$Country,
   Value = prop_country2$percent
 )
 
+positions3 <- df3 %>%
+  mutate(csum3 = rev(cumsum(rev(Value))), 
+         pos3 = Value/2 + lead(csum3,1), 
+         pos3 = if_else(is.na(pos3), Value/2, pos3))
+
 #Constructing a pie chart...
 ggplot(df3, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  geom_col(width = 1, color = "black")+
   coord_polar(theta = "y") + 
+  geom_label_repel(data = positions3,
+                   aes(y = pos3, label = paste0(format(round(Value,1), nsmall=1), "%")),
+                   size = 4.5, nudge_x = 1, show.legend = FALSE) +
   theme_void() + 
-  labs(title="Percentage of Surveyed people within each country")
+  labs(title="Percentage [%] of surveyed people within each major Country")
 ```
 
-The pie chart above shows that a huge proportion of our respondents come from the United States. This needs to be factored into our analysis, as it is not representative of the global population, and as a result we may see higher-than-expected salary values. In addition, we will be able to make predictions about the USA with greater confidence than we will for other countries. 
+The pie chart above shows that a huge proportion of our respondents come from the United States. This needs to be factored into our analysis, as it is not representative of the global population, and as a result we may see higher-than-expected salary values. In addition, we will be able to make predictions about the USA with greater confidence than we will for other countries. Moreover, almost all of our respondents come from (economically) developed countries.  
 
-
+For the respondents that live in the United States, we can explore the 'state' variable. In this case, a bar chart is used as it is easier to visualise the most-inhabited states. 
 
 ```{r, warning=FALSE, message=FALSE}
-# We repeat this process again to explore the 'state' variable, this time we remove NA's and group states that have less than 350 respondents as 'other'...
+# We repeat this process again to explore the 'state' variable, this time we remove NA's and group states that have less than 600 respondents as 'other'...
 
-prop_state <- clean_data %>% 
-  count(state_abb, sort=TRUE, na.rm = TRUE)
-prop_state$state_abb <- ifelse(prop_state$n < 300, "Other", prop_state$state_abb)
+prop_state <- clean_data %>%
+  filter(state_abb != "NA") %>%
+  count(state_abb, sort=TRUE)
+prop_state$state_abb <- ifelse(prop_state$n < 600, "Other", prop_state$state_abb)
 
 prop_state2 <- aggregate(prop_state$n, by=list(state_abb=prop_state$state_abb), FUN=sum)
-
 prop_state2 <- prop_state2 %>%
-  mutate(percent = 100* x/sum(x)) %>%
-  arrange(percent)
-#prop_state2
+  mutate(percent = 100* x/sum(x))
 
 df4 <- data.frame(
   Group = prop_state2$state_abb,
   Value = prop_state2$percent
 )
 
-#Constructing a pie chart...
-ggplot(df4, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
-  coord_polar(theta = "y") + 
-  theme_void() + 
-  labs(title="Percentage of Surveyed people within each US State")
+df4$Group <- factor(df4$Group, levels = df4$Group[order(df4$Value, decreasing=TRUE)])
+
+df4 %>%
+  # Plotting the bar (col) chart
+  ggplot(aes(x=Group, y=Value, fill=Group)) +
+  geom_col() +
+  labs(title="Percentage [%] of surveyed respondents (living in America) \nwithin each US State",
+       x="State",
+       y="Percentage [%]",
+       fill="Group")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 ```
 
 The figure above shows that there is a disproportionate number of respondents living in states such as CA, NY and WA. This is expected however, as these states have some of the largest cities in the USA and some of the better-paid 'managerial' jobs. 
 
+Now we explore the 'city' variable with a bar chart to see which cities have been most-represented.
 
 ```{r, warning=FALSE, message=FALSE}
 # Now we explore the 'city' variable... any city with less than 500 people is grouped into 'other'
@@ -504,29 +527,35 @@ prop_city$city <- ifelse(prop_city$n < 500, "Other", prop_city$city)
 prop_city2 <- aggregate(prop_city$n, by=list(city=prop_city$city), FUN=sum)
 
 prop_city2 <- prop_city2 %>%
-  mutate(percent = 100* x/sum(x)) %>%
-  arrange(percent)
-#prop_city2
+  mutate(percent = 100* x/sum(x))
 
 df5 <- data.frame(
   Group = prop_city2$city,
   Value = prop_city2$percent
 )
 
+positions5 <- df5 %>%
+  mutate(csum5 = rev(cumsum(rev(Value))), 
+         pos5 = Value/2 + lead(csum5,1), 
+         pos5 = if_else(is.na(pos5), Value/2, pos5))
+
 #Constructing a pie chart...
 ggplot(df5, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  geom_col(width = 1, color = "black")+
   coord_polar(theta = "y") + 
+  geom_label_repel(data = positions5,
+                   aes(y = pos5, label = paste0(format(round(Value,1), nsmall=1), "%")),
+                   size = 4.5, nudge_x = 1, show.legend = FALSE) +
   theme_void() + 
-  labs(title="Percentage of Surveyed people within each major global city")
+  labs(title="Percentage [%] of surveyed people within different Cities")
 ```
 
-As we can see there is a huge variation in the location (city) of respondents. For this reason, it will be difficult to compare data between cities that are not in the top 5-10 shown above. 
+As we can see there is a huge variation in the location (city) of respondents. For this reason, it will be difficult to compare data between cities that are not in the top 5-10 shown above, as there is likely to be insufficient data.
 
+Now we examine the experience levels of our cohort, starting with *overall* *experience*...
 
 ```{r, warning=FALSE, message=FALSE}
-# We now explore the variable - 'overall_years_of_experience' ...
+# We now explore the variable - 'overall_years_of_experience' - we analyse this with a bar chart.
 prop_totalexp <- clean_data %>% 
   count(overall_years_of_professional_experience) %>% 
   mutate(percent = 100* n/sum(n))
@@ -536,19 +565,23 @@ df6 <- data.frame(
   Value = prop_totalexp$percent
 )
 
-#Constructing a pie chart...
-ggplot(df6, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
-  coord_polar(theta = "y") + 
-  theme_void() + 
-  labs(title="Percentage of people within each category of OVERALL experience level")
+order <- c("1 year or less","2 - 4 years","5-7 years","8 - 10 years","11 - 20 years","21 - 30 yeaars","31 - 40 years","41 years or more")
 
+df6$Group = factor(c("1 year or less","11 - 20 years","2 - 4 years","21 - 30 yeaars","31 - 40 years","41 years or more","5-7 years","8 - 10 years"),levels = order)
+
+df6 %>%
+  ggplot(aes(x=Group, y=Value, fill=Group)) +
+  geom_col() +
+  labs(title="Percentage [%] of people within each category of \nOVERALL experience level",
+       x="Experience Level",
+       y="Percentage [%]",
+       fill="Group")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 ```
 
 This graph above shows that the majority of our respondents have less than 20 years experience. This makes sense given the average age of our respondents is typically between 25 and 44. As mentioned previously, we have very few respondents that are senior executives over the age of 45.
 
-
+Now, we analyse experience within the respondent's given field...
 
 ```{r, warning=FALSE, message=FALSE}
 # We now explore the variable - 'years of experience within specific field' ...
@@ -561,17 +594,24 @@ df7 <- data.frame(
   Value = prop_fieldexp$percent
 )
 
-#Constructing a pie chart...
-ggplot(df7, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
-  coord_polar(theta = "y") + 
-  theme_void() + 
-  labs(title="Percentage of people in each category of \nSECTOR-SPECIFIC experience level")
+order <- c("1 year or less","2 - 4 years","5-7 years","8 - 10 years","11 - 20 years","21 - 30 yeaars","31 - 40 years","41 years or more")
+
+df7$Group = factor(c("1 year or less","11 - 20 years","2 - 4 years","21 - 30 yeaars","31 - 40 years","41 years or more","5-7 years","8 - 10 years"),levels = order)
+
+df7 %>%
+  ggplot(aes(x=Group, y=Value, fill=Group)) +
+  geom_col() +
+  labs(title="Percentage [%] of people within each category of \nSECTOR-SPECIFIC experience level",
+       x="Experience Level",
+       y="Percentage [%]",
+       fill="Group")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
 ```
 
 Here we see that almost nobody has more than 20 years of sector specific experience - once again we expect these results, as the average number of years of sector specific experience should almost certainly be less than the average number of years of total experience. 
 
+Now, we can compare the education levels of our cohort (once again using a bar chart).
 
 ```{r, warning=FALSE, message=FALSE}
 # Education Level ...
@@ -584,22 +624,33 @@ df8 <- data.frame(
   Value = prop_education$percent
 )
 
-#Constructing a pie chart...
-ggplot(df8, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
-  coord_polar(theta = "y") + 
-  theme_void() + 
-  labs(title="Percentage of people in each category of education level")
+#We abbreviate "Professional Degree (MD, JD, etc.)" to "Prof. Degree" because it takes up too much space on the chart!
+df8$Group[6] <- "Prof. Degree"
+
+order <- c("NA","High School","Some college","College Degree","Master's Degree","Prof. Degree","PhD")
+
+df8$Group = factor(c("College Degree","High School","Master's Degree","PhD","Prof. Degree","Some college","NA"),levels = order)
+
+df8 %>%
+  ggplot(aes(x=Group, y=Value, fill=Group)) +
+  geom_col() +
+  labs(title="Percentage [%] of people within each category of Education level",
+       x="Education Level",
+       y="Percentage [%]",
+       fill="Group")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
 ```
 
-The results for education highlight the fact that a disproportionate number of our respondents hold some form of degree (Master's or College). This is not representative of the global population, or even the population of the United States. This bias is expected within the data, as the survey is targeted towards people in 'managerial' roles - typically, we would expect these people to be more likely to have a degree. 
+The results for education highlight the fact that a disproportionate number of our respondents hold some form of degree (Master's, College or Professional). This is not representative of the global population, or even the population of the United States. This bias is expected within the data, as the survey is targeted towards people in 'managerial' roles - typically, we would expect these people to be more likely to have a degree. 
 
+Now we can analyse the variable 'gender' - this variable is more simple and can therefore be illustrated more effectively with a pie chart.
 
 ```{r, warning=FALSE, message=FALSE}
 # Gender ...
-prop_gender <- clean_data %>% 
-  count(gender, na.rm = TRUE) %>% 
+prop_gender <- clean_data %>%
+  filter(gender != "NA") %>%
+  count(gender) %>% 
   mutate(percent = 100* n/sum(n))
 
 df9 <- data.frame(
@@ -607,18 +658,27 @@ df9 <- data.frame(
   Value = prop_gender$percent
 )
 
+positions9 <- df9 %>%
+  mutate(csum9 = rev(cumsum(rev(Value))), 
+         pos9 = Value/2 + lead(csum9,1), 
+         pos9 = if_else(is.na(pos9), Value/2, pos9))
+
 #Constructing a pie chart...
 ggplot(df9, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  geom_col(width = 1, color = "black")+
   coord_polar(theta = "y") + 
+  geom_label_repel(data = positions9,
+                   aes(y = pos9, label = paste0(format(round(Value,1), nsmall=1), "%")),
+                   size = 4.5, nudge_x = 1, show.legend = FALSE) +
   theme_void() + 
-  labs(title="Percentage of people in each gender category")
+  #guides(fill = guide_legend(title = "Group")) +
+  labs(title="Percentage [%] of respondents in each Gender category")
 ```
 
 As this survey is targeted towards females, we have a particularly biased data set when it comes to gender. This is important to consider. 
 
 
+Finally, we can analyse the 'race' variable. 
 
 ```{r, warning=FALSE, message=FALSE}
 # Finally, we explore the variable 'race' - in this instance, we group any ethnicity with n < 200 as 'Other'...
@@ -631,22 +691,27 @@ prop_race$race <- ifelse(prop_race$race == "Another option not listed here or pr
 prop_race2 <- aggregate(prop_race$n, by=list(race=prop_race$race), FUN=sum)
 
 prop_race2 <- prop_race2 %>%
-  mutate(percent = 100* x/sum(x)) %>%
-  arrange(percent)
-#prop_race2
+  mutate(percent = 100* x/sum(x))
 
 df10 <- data.frame(
   Group = prop_race2$race,
   Value = prop_race2$percent
 )
 
+positions10 <- df10 %>%
+  mutate(csum10 = rev(cumsum(rev(Value))), 
+         pos10 = Value/2 + lead(csum10,1), 
+         pos10 = if_else(is.na(pos10), Value/2, pos10))
+
 #Constructing a pie chart...
 ggplot(df10, aes(x="", y=Value, fill=Group))+ 
-  geom_col(color = "black")+
-  geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
+  geom_col(width = 1, color = "black")+
   coord_polar(theta = "y") + 
+  geom_label_repel(data = positions10,
+                   aes(y = pos10, label = paste0(format(round(Value,1), nsmall=1), "%")),
+                   size = 4.5, nudge_x = 1, show.legend = FALSE) +
   theme_void() + 
-  labs(title="Percentage of Surveyed people within each ethnicity category")
+  labs(title="Percentage [%] of surveyed people within different Ethnicity groups")
 ```
 
 Here, we can see that a disproportionate number of people surveyed are White. Around 75% of people in the USA are white, and as the USA is the most surveyed country, we expect the proportion of white people to be large. The proportion of white people however, is still slightly higher than we would expect (particularly when considering the other countries surveyed) - and this could perhaps highlight a structural preference towards white people in the work place (for executive managerial jobs) in the United States. 
@@ -656,10 +721,82 @@ The analysis above has highlighted some of the bias in our dataset that needs to
 
 
 
+
+
 ### Section 2.1 - Exploring the dependent variable and its relations.
 
+Now that we have explored the independent variables sufficiently, we can begin exploring the dependent variable, which is the 'average annual salary in USD [$]'. This analysis will be continued into section 3, where we will use confidence intervals and perform hypothesis tests to determine which independent variables have the greatest affect on salary.  
+
+For now, we can do some initial plots of the dependent variable, to see how it may be distributed and what it may be most affected by. 
+
+We begin with a density plot of the total annual earnings (in USD) using a logarithmic scale.  
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(clean_data, aes(x=tot_earnings_USD))+
+  geom_density(fill="dodgerblue", alpha=0.5)+
+  scale_x_log10()+
+  labs(title="Density Plot for Average Annual Earnings in USD [$]", subtitle = "Plotted using a logarithmic scale", x="Average Annual Earnings in USD [$]", y="Density")
+  
+#The mean average annual salary in USD is as follows: 
+mean(clean_data$tot_earnings_USD)
+```
+
+When we plot the distribution of average annual earnings on a logarithmic scale, we obtain what looks like a normal distribution. This means that average annual earnings can likely be approximated with a log-normal distribution, and also that, if we plotted earnings on a normal (non-logarithmic) scale, the distribution would be **very** positively skewed. This is expected, as salary is generally a positively skewed distribution, as there are typically very large positive outliers far beyond the average value. 
 
 
+We can now begin investigating how  salary might be influenced by different factors, starting with industry. We plot the average salary by industry (for the best paid industries) shown below.
+
+```{r, warning=FALSE, message=FALSE}
+
+industry_salary <- clean_data %>%
+  select(industry, tot_earnings_USD)
+
+agg_industry_salary <- aggregate(tot_earnings_USD ~ industry, industry_salary, mean)
+agg_industry_salary <- agg_industry_salary[with(agg_industry_salary,order(-tot_earnings_USD)),]
+agg_industry_salary <- agg_industry_salary[1:8,]
+
+agg_industry_salary$industry <- factor(agg_industry_salary$industry, levels = agg_industry_salary$industry[order(agg_industry_salary$tot_earnings_USD, decreasing=TRUE)])
+
+agg_industry_salary %>%
+  # Plotting the bar (col) chart
+  ggplot(aes(x=industry, y=tot_earnings_USD, fill=industry)) +
+  geom_col() +
+  labs(title="Average Salary per Industry for the Top 8 \nhighest earning Industries",
+       x="Indusry",
+       y="Average Annual Salary USD [$]",
+       fill="Group")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+```
+
+Evidently, there will be a large discrepancy in pay between industries. This is something we can analyse more in the following section (3) with statistical tests.
+
+Finally, we can use our data to see if there is a salary discrepancy between males and females. We do this by taking the average salary of males and females in our survey and plotting this on a bar graph. 
+
+```{r, warning=FALSE, message=FALSE}
+
+gender_salary <- clean_data %>%
+  select(gender, tot_earnings_USD)
+
+agg_gender_salary <- aggregate(tot_earnings_USD ~ gender, gender_salary, mean)
+agg_gender_salary <- agg_gender_salary[with(agg_gender_salary,order(-tot_earnings_USD)),]
+
+agg_gender_salary$gender[3] <- "Other"
+
+agg_gender_salary$gender <- factor(agg_gender_salary$gender, levels = agg_gender_salary$gender[order(agg_gender_salary$tot_earnings_USD, decreasing=TRUE)])
+
+agg_gender_salary %>%
+  # Plotting the bar (col) chart
+  ggplot(aes(x=gender, y=tot_earnings_USD, fill=gender)) +
+  geom_col() +
+  labs(title="Average Salary per Gender",
+       x="Gender",
+       y="Average Annual Salary USD [$]",
+       fill="Group")
+
+```
+
+These results would indicate that there is a gender pay gap, but we need to conduct hypothesis tests to confirm this assumption. We will delve deeper into the data and conduct hypothesis tests in the following section. 
 
 
 
