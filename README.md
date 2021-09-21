@@ -12,7 +12,8 @@
 - White is the dominant race, probably because US is the dominant country in this survey
 - Gender pay gap (man > woman) is the lease significant in the age group 18-24 in the UK, while most significant in age group 55-64. In UK, women during 18-24 do not earn differently from men in statistical sense.
 - Gender pay gap (woman > man) is the most significant in the publishing sector in the US. However, US women in this sector do not earn significantly differently from men in statistical sense.
-- TBD (section 3.3-3.5)
+- There is a positive relation between the level of education and the total earnings, and the same applies to overall years of experience and total earnings.
+- White people seems to make more money averagely than the other races. However, it should be noticed that no solid conclusion can be drawn until its colinearity with other factors is investigated, such as education level and experience.
 - As most variables are discrete instead of continuous, it is hard to produce correlation table.
 - TBD (section 4)
 
