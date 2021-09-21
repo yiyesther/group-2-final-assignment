@@ -157,7 +157,7 @@ temp <- clean_data[is.na(clean_data$state_abb),]
 temp2 <- clean_data %>% 
   count(state_abb, sort = TRUE)
 temp2
-
+```
 
 
 The gender variable is cleaned by adding entries with "Prefer not to answer" to the "Other or prefer not to answer" group. 
@@ -166,6 +166,7 @@ The gender variable is cleaned by adding entries with "Prefer not to answer" to 
 #Clean "gender"
 clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
 clean_data$gender <- gsub("Non-binary", "Other or prefer not to answer", clean_data$gender)
+
 ```
 
 
@@ -804,15 +805,6 @@ agg_gender_salary %>%
 These results would indicate that there is a gender pay gap, but we need to conduct hypothesis tests to confirm this assumption. We will delve deeper into the data and conduct hypothesis tests in the following section. 
 
 
-
-
-
-
-
-
-
-
->>>>>>> 3bdbbcabb51ae85fcac84560c6687505f82a0924
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
 
 ### Section 3.1 Gender pay inequality accross age groups in UK
@@ -1070,7 +1062,8 @@ clean_data %>%
   drop_na(race) %>% 
   #Here the mixed races are not taken into account
   filter(race == c("White","Black","Hispanic","Asian")) %>% 
-  ggplot(aes(x = race,y = tot_earnings_USD))+
+  ggplot(aes(x = tot_earnings_USD, 
+             y = fct_reorder(race,tot_earnings_USD)))+
   geom_boxplot()+
   labs(title = "Total earning of different races",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
@@ -1203,7 +1196,9 @@ clean_data %>%
   labs(title = "Total earning of people with different education level",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
        x = "Total earnings in USD",
-       y = "Highest level of education")
+       y = "Highest level of education")+
+  theme_bw()+
+  NULL
   
 ```
 It can be seen in the box plot that as the level of education increases, people tend to make more (except for "Some College"). The closest boxes are Master's degree and College degree, and to confirm they are significantly different, a bootstrap analysis is used. The reason why people with "Some College" background make the highest mean earnings is probably because people who drop out of college may have started a business of their own and made success out of it.
@@ -1290,7 +1285,9 @@ clean_data %>%
   labs(title = "Total earning of people with difference oveall experience",
        subtitle = "for people with earnings ranged from 0 to 300000 USD",
        x = "Total earnings in USD",
-       y = "Overall experience")
+       y = "Overall experience")+
+  theme_bw()+
+  NULL
   
 ```
 ```{r, message=FALSE,warning=FALSE}
