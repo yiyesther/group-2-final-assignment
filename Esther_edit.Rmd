@@ -1,0 +1,1049 @@
+---
+title: "final_group_2"
+output: html_document
+---
+
+# Study Group 2 - Final Assignment - Cleaning and Analysing the "Ask a Manager 2021 Survey" Dataset.
+
+
+## Section 1 - Importing and Cleaning the Data 
+
+### Importing the data and relevant libraries
+
+We begin by importing the following libraries to aid our analysis...
+
+```{r}
+library(googlesheets4)
+library(tidyverse)
+library(janitor) 
+library(skimr)
+library(countrycode) # to clean up country names
+library(broom)
+library(car)
+library(ggfortify)
+library(countrycode)
+library(rvest)
+library(quantmod)
+library(moderndive)
+library(fastDummies)
+library(see)
+```
+
+
+Next, we use googlesheets4 to gain authorization to the "Ask a Manager 2021 survey" data sheet. 
+
+```{r}
+# Use googlesheets4 to get data
+url <- "https://docs.google.com/spreadsheets/d/1IPS5dBSGtwYVbjsfbaMCYIWnOuRmJcbequohNxCyGVw/edit?resourcekey#gid=1625408792"
+googlesheets4::gs4_auth() # google sheets authorisation
+```
+
+We subsequently assign the raw data to a new variable (ask_a_manager_2021), which we then skim to view a summary of the data - this includes the size of the dataset, as well as the variable types amongst other information. 
+
+```{r}
+# load "Ask a A Manager 2021 Survey" googlesheet
+# https://www.askamanager.org/
+ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>% 
+  janitor::clean_names()
+```
+```{r}
+skimr::skim(ask_a_manager_2021)
+```
+
+By analysing n_missing and n_unique, we can gain an insight into which variables will require the most cleaning. For example, variables such as job_title and city have many unique entries - making it likely that these variables will be more difficult to clean. 
+
+
+### Cleaning the Data. 
+
+We begin by cleaning the "country" variable. This involves using standardised 'countrycode' to convert the countries into a standard, recognisable format. 
+
+Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change instances of "England" to "UK". We ignore mispellings, as they only represent a small portion of the data set. 
+
+```{r}
+# Clean specific country names so that they can be recognised by iso3 countrycode. 
+ask_a_manager_2021$country <- gsub("England", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("Scotland", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("England, UK", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("Northern Ireland", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("Wales", "UK", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("U. S.", "USA", ask_a_manager_2021$country)
+ask_a_manager_2021$country <- gsub("America", "USA", ask_a_manager_2021$country)
+```
+
+Now that we have completed this, we can apply the country code to standardise the names of the country variables. These can be found in a new column "Country", within the ask_a_manager_2021 data frame. 
+
+```{r}
+# Clean "country"
+# Use countrycode::countryname() to clean country names
+salary_iso3 <- ask_a_manager_2021 %>% 
+  select(country) %>% 
+  pull() %>% 
+  countrycode(
+    origin = "country.name",
+    destination = "iso3c") %>% 
+  as_tibble()
+
+ask_a_manager_2021 <- bind_cols(ask_a_manager_2021, salary_iso3)
+
+#Change the column name
+colnames(ask_a_manager_2021)[19] <- "Country"
+```
+
+
+Next, we create a new dataframe by selecting the columns (variables) that are most suitable for analysis. For example, this involves omitting the column 'additional_context_on_job_title'. This column contains little information that is appropriate for statistical analysis. 
+
+```{r}
+#Create a new dataframe for the desired data
+clean_data <- ask_a_manager_2021 %>% 
+  select(how_old_are_you, industry, currency,Country,state,city,overall_years_of_professional_experience,years_of_experience_in_field,highest_level_of_education_completed,gender,race,other_monetary_comp,annual_salary) 
+```
+
+We repeat the procedure we used to clean the country data for the states - using a standardised code and correcting for any anomalies that cannot be picked up by this standardisation. 
+
+```{r}
+#Clean "states" so that they can be recognised by specific state code. 
+clean_data$state <- gsub("District of Columbia, Virginia", "Virginia", clean_data$state)
+clean_data$state <- gsub("District of Columbia, Maryland", "Maryland", clean_data$state)
+clean_data$state <- gsub("District of Columbia, Washington", "Washington", clean_data$state)
+```
+
+The state names are standardised as follows, using the abbreviations taken from the following wikipedia page. 
+
+```{r}
+# Use state abbreviations to categorise state entries
+url <- "https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States"
+
+# get tables that exist on wikipedia page 
+tables <- url %>% 
+  read_html() %>% 
+  html_nodes(css="table")
+
+# parse HTML tables into a dataframe called polls 
+# Use purr::map() to create a list of all tables in URL
+states <- map(tables, . %>% 
+             html_table(fill=TRUE)%>% 
+             janitor::clean_names())
+states_data <- states[[2]] %>% 
+  select(flag_name_andpostal_abbreviation_13, flag_name_andpostal_abbreviation_13_2)
+states_data = states_data[-1,]
+
+colnames(states_data) <- c("state", "state_abb")
+
+states_data[17,1] <- "Kentucky"
+states_data[21,1] <- "Massachusetts"
+states_data[38,1] <- "Pennsylvania"
+states_data[46,1] <- "Virginia"
+  
+```
+
+
+The cleaned state variable is joined to the 'clean_data' data frame. 
+
+```{r}
+# Bind the state abbreviation column in to clean_data
+clean_data <- clean_data %>%
+  left_join(states_data, by="state")
+```
+
+
+We can confirm the state cleaning has worked by counting the state abbreviations column - this has 51 entries - the 50 states + NA entries (which arrise due to the large number of people completing this survey who live outside of America, as well as those who live in the District of Columbia which is not registered as a state). 
+
+```{r}
+temp <- clean_data[is.na(clean_data$state_abb),]
+temp2 <- clean_data %>% 
+  count(state_abb, sort = TRUE)
+temp2
+```
+
+
+The gender variable is cleaned by adding entries with "Prefer not to answer" to the "Other or prefer not to answer" group. 
+
+```{r}
+#Clean "gender"
+clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
+clean_data$gender <- gsub("Non-binary", "Other or prefer not to answer", clean_data$gender)
+```
+
+The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most-common) industries. 
+
+```{r}
+#Clean "industry"
+clean_data$industry <- gsub("Pharmaceuticals", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharmaceutical", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharma Development", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharma Manufacturing", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharma/biotechnology", "Pharma", clean_data$industry)
+clean_data$industry <- gsub("Pharma R&D", "Pharma", clean_data$industry)
+
+clean_data$industry <- gsub("Libraries", "Library", clean_data$industry)
+clean_data$industry <- gsub("Public library", "Library", clean_data$industry)
+clean_data$industry <- gsub("Librarian", "Library", clean_data$industry)
+clean_data$industry <- gsub("public library", "Library", clean_data$industry)
+clean_data$industry <- gsub("library", "Library", clean_data$industry)
+
+clean_data$industry <- gsub("Biotech/pharmaceuticals", "Biotech", clean_data$industry)
+clean_data$industry <- gsub("Biotech/Pharma", "Biotech", clean_data$industry)
+clean_data$industry <- gsub("Biotechnology", "Biotech", clean_data$industry)
+
+clean_data$industry <- gsub("Environmental Consulting", "Environmental", clean_data$industry)
+
+clean_data$industry <- gsub("Scientific Research", "Science", clean_data$industry)
+
+clean_data$industry <- gsub("Law Enforcement & Security", "Law", clean_data$industry)
+
+clean_data$industry <- gsub("Consulting", "Business or Consulting", clean_data$industry)
+clean_data$industry <- gsub("Business or Business or Consulting", "Business or Consulting", clean_data$industry)
+
+clean_data$industry <- gsub("Commercial Real Estate", "Real Estate", clean_data$industry)
+
+clean_data$industry <- gsub("Museums", "Museum", clean_data$industry)
+
+clean_data$industry <- gsub("Oil & Gas", "Oil and Gas", clean_data$industry)
+
+clean_data$industry <- gsub("manufacturing", "Manufacturing", clean_data$industry)
+
+```
+
+```{r}
+# Examining the industry data to ensure that it has been cleaned sufficiently. 
+temp3 <- clean_data %>% 
+  count(industry, sort=TRUE) 
+temp3
+```
+
+
+The "city" data is also cleaned manually, this is done by grouping repeated names of the same city - for instance "New York", "New York City", "NYC" are all grouped as "NYC". We clean data for all cities that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most lived in) cities. For example - when comparing the average salaries of people who live in New York with those who live in Washington - further cleaning of city data with n < 5 items will not largely impact this comparison.  
+
+
+
+```{r}
+#Clean City Data (clean all cities with n >= 5)
+clean_data$city <- gsub("New York City", "NYC", clean_data$city)
+clean_data$city <- gsub("New York", "NYC", clean_data$city)
+clean_data$city <- gsub("Washington, DC", "DC", clean_data$city)
+clean_data$city <- gsub("Washington", "DC", clean_data$city)
+clean_data$city <- gsub("Washington DC", "DC", clean_data$city)
+clean_data$city <- gsub("DC DC", "DC", clean_data$city)
+clean_data$city <- gsub("DC, D.C.", "DC", clean_data$city)
+clean_data$city <- gsub("Long Beach", "LA", clean_data$city)
+clean_data$city <- gsub("District of Columbia", "DC", clean_data$city)
+clean_data$city <- gsub("Manhattan", "NYC", clean_data$city)
+clean_data$city <- gsub("San Francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("San Francisco Bay Area", "San Fran", clean_data$city)
+clean_data$city <- gsub("new york", "NYC", clean_data$city)
+clean_data$city <- gsub("DC D.C.", "DC", clean_data$city)
+clean_data$city <- gsub("SF Bay Area", "San Fran", clean_data$city)
+clean_data$city <- gsub("New york", "NYC", clean_data$city)
+clean_data$city <- gsub("Vancouver, BC", "Vancouver", clean_data$city)
+clean_data$city <- gsub("Bay Area", "San Fran", clean_data$city)
+clean_data$city <- gsub("Cambridge, MA", "Cambridge", clean_data$city)
+clean_data$city <- gsub("Boston, MA", "Boston", clean_data$city)
+clean_data$city <- gsub("portland", "Portland", clean_data$city)
+clean_data$city <- gsub("Frisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("Chicago suburbs", "Chicago", clean_data$city)
+clean_data$city <- gsub("D.C.", "DC", clean_data$city)
+clean_data$city <- gsub("South San Francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("Chicago Suburbs", "Chicago", clean_data$city)
+clean_data$city <- gsub("NYC, NY", "NYC", clean_data$city)
+clean_data$city <- gsub("Boston area", "Boston", clean_data$city)
+clean_data$city <- gsub("chicago", "Chicago", clean_data$city)
+clean_data$city <- gsub("Los angeles", "LA", clean_data$city)
+clean_data$city <- gsub("Metro Detroit", "Detroit", clean_data$city)
+clean_data$city <- gsub("Newcastle upon Tyne", "Newcastle", clean_data$city)
+clean_data$city <- gsub("Philadelphia suburbs", "Philadelphia", clean_data$city)
+clean_data$city <- gsub("san francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("Ottawa, Ontario", "Ottawa", clean_data$city)
+clean_data$city <- gsub("seattle", "Seattle", clean_data$city)
+clean_data$city <- gsub("Seattle, WA", "Seattle", clean_data$city)
+clean_data$city <- gsub("boston", "Boston", clean_data$city)
+clean_data$city <- gsub("London, UK", "London", clean_data$city)
+clean_data$city <- gsub("Nyc", "NYC", clean_data$city)
+clean_data$city <- gsub("NYC city", "NYC", clean_data$city)
+clean_data$city <- gsub("San francisco", "San Fran", clean_data$city)
+clean_data$city <- gsub("atlanta", "Atlanta", clean_data$city)
+clean_data$city <- gsub("Atlanta metro area", "Atlanta", clean_data$city)
+clean_data$city <- gsub("Bronx", "NYC", clean_data$city)
+clean_data$city <- gsub("Boston Area", "Boston", clean_data$city)
+clean_data$city <- gsub("Chicago, IL", "Chicago", clean_data$city)
+clean_data$city <- gsub("Greater Toronto Area", "Toronto", clean_data$city)
+clean_data$city <- gsub("indianapolis", "Indianapolis", clean_data$city)
+clean_data$city <- gsub("los angeles", "LA", clean_data$city)
+clean_data$city <- gsub("NY", "NYC", clean_data$city)
+clean_data$city <- gsub("Santa Monica", "LA", clean_data$city)
+clean_data$city <- gsub("toronto", "Toronto", clean_data$city)
+clean_data$city <- gsub("Vancouver, British Columbia", "Vancouver", clean_data$city)
+clean_data$city <- gsub("St. Louis, MO", "St. Louis", clean_data$city)
+clean_data$city <- gsub("washington", "DC", clean_data$city)
+clean_data$city <- gsub("washington dc", "DC", clean_data$city)
+```
+
+Cleaning races variable
+```{r}
+clean_data$race <- gsub("Asian or Asian American", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Another option listed here or prefer not to answer", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Black or African American", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Black or African American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Black or African American, Native American or Alaska Native, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Middle Eastern or Northern African", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or Asian American, White, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
+clean_data$race <- gsub("Black or African American", "Black", clean_data$race)
+clean_data$race <- gsub("Black or African American, Another option not listed here or prefer not to answer", "Black", clean_data$race)
+clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin", "Black", clean_data$race)
+clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Black", clean_data$race)
+clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, White", "Black", clean_data$race)
+clean_data$race <- gsub("Black or African American, Middle Eastern or Northern African, White", "Black", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Another option not listed here or prefer not to answer", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African, White", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, Another option not listed here or prefer not to answer, White", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White, Another option not listed here or prefer not to answer", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Middle Eastern or Northern African", "Other", clean_data$race)
+clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native", "Other", clean_data$race)
+clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native, White", "Other", clean_data$race)
+clean_data$race <- gsub("Middle Eastern or Northern African, White", "Other", clean_data$race)
+clean_data$race <- gsub("Middle Eastern or Northern African, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
+clean_data$race <- gsub("Native American or Alaska Native", "Other", clean_data$race)
+clean_data$race <- gsub("Native American or Alaska Native, Another option not listed here or prefer not to answer", "Other", clean_data$race)
+clean_data$race <- gsub("Native American or Alaska Native, White", "Other", clean_data$race)
+clean_data$race <- gsub("Native American or Alaska Native, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
+clean_data$race <- gsub("White, Another option not listed here or prefer not to answer", "White", clean_data$race)
+clean_data$race <- gsub("Another option not listed here or prefer not to answer", "Other", clean_data$race)
+clean_data$race <- gsub("Asian or African American", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or African American, Other, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or African American, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Hispanic, Other, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Hispanic, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Other", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Black", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Black, Hispanic", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Black, Other, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Black, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, White", "Asian", clean_data$race)
+clean_data$race <- gsub("Black", "Black", clean_data$race)
+clean_data$race <- gsub("Black, Hispanic", "Black", clean_data$race)
+clean_data$race <- gsub("Black, Hispanic, Other, White", "Black", clean_data$race)
+clean_data$race <- gsub("Black, Hispanic, White", "Black", clean_data$race)
+clean_data$race <- gsub("Black, Other", "Black", clean_data$race)
+clean_data$race <- gsub("Black, Other, Other, White", "Black", clean_data$race)
+clean_data$race <- gsub("Black, Other, White", "Black", clean_data$race)
+clean_data$race <- gsub("Black, White", "Black", clean_data$race)
+clean_data$race <- gsub("Hispanic, Other", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Other, Other", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, Other, White", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Other, Other", "Other", clean_data$race)
+clean_data$race <- gsub("Otherc, Other, White", "Other", clean_data$race)
+clean_data$race <- gsub("Other, White", "Other", clean_data$race)
+clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
+clean_data$race <- gsub("Asian, Other", "Asian", clean_data$race)
+clean_data$race <- gsub("Hispanic, Other", "Hispanic", clean_data$race)
+clean_data$race <- gsub("Hispanic, White", "Hispanic", clean_data$race)
+```
+
+
+```{r}
+#Examining the top cities to ensure the data has been cleaned sufficiently.  
+temp4 <- clean_data %>% 
+  count(city, sort=TRUE) 
+temp4
+```
+
+Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some poeple also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
+
+```{r}
+clean_data <- clean_data %>% 
+  filter(clean_data$currency != "Other") #remove 'other' currencies
+
+#make AUD and NZD same currency
+clean_data$currency[clean_data$currency == "AUD/NZD"] <- "AUD"
+
+#change the NULL values to 0 for other_monetary_comp
+clean_data$other_monetary_comp <- gsub("NULL", "0", clean_data$other_monetary_comp)
+
+#convert list type to numeric for other_monetary_comp
+clean_data$other_monetary_comp <-
+  as.numeric(unlist(clean_data$other_monetary_comp))
+
+#clean other_compensation and add it to total compensation
+clean_data <- clean_data %>% 
+  mutate(other_compensation = case_when( 
+                                        is.na(other_monetary_comp)~0,
+                                        T~other_monetary_comp))
+clean_data <- clean_data %>% 
+  mutate(total_earnings = other_compensation + annual_salary)
+```
+
+Now we will fetch the most recent exchange rates and create a table with them.
+
+```{r}
+#get live exchange rates
+from <- c(clean_data$currency)
+to <- c("USD")
+quotes <- getQuote(paste0(from, to, "=X"))[2]
+#add column with currency names
+quotes <- quotes %>% 
+  mutate(currency = c("USD", "GBP", "CAD", "EUR", "AUD", "CHF", "ZAR", "SEK", "HKD", "JPY"))
+```
+
+We subsequently left join the two tables...
+
+```{r}
+#join quotes table with bigger table according to the currency
+clean_data <- clean_data %>% 
+  left_join(quotes, by="currency") 
+```
+
+... and multiply the total earnings by the exchange rate to get the currency-converted total earnings in USD.
+
+```{r}
+clean_data <- clean_data %>% 
+  mutate(tot_earnings_USD = total_earnings*Last) 
+```
+
+```{r}
+#Examining the top currencies to ensure the data has been cleaned sufficiently.
+temp5 <- clean_data %>% 
+  count(currency, sort=TRUE) 
+temp5
+```
+
+
+At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. Finally, we omit the unnecessary variables: 
+
+```{r}
+clean_data <- clean_data %>% 
+  select(how_old_are_you, industry, currency, Country, state_abb, city, overall_years_of_professional_experience, years_of_experience_in_field, highest_level_of_education_completed, gender, race, annual_salary ,tot_earnings_USD) 
+```
+
+
+
+
+
+
+
+
+## Section 2 - Graphically summarising and exploring the Data.
+
+```{r}
+# Some quick counts, groups, etc
+
+ask_a_manager_2021 %>% 
+  count(how_old_are_you, sort=TRUE) %>% 
+  mutate(percent = 100* n/sum(n))
+```
+
+```{r}
+# Industry is messy... it has > 1000 different industries  
+ask_a_manager_2021 %>% 
+  count(industry, sort=TRUE) %>% 
+  mutate(percent = 100* n/sum(n))
+```
+
+
+```{r}
+# Most of 'currency' is USD
+ask_a_manager_2021 %>% 
+  count(currency, sort=TRUE) %>% 
+  mutate(percent = 100* n/sum(n))
+
+```
+
+
+```{r}
+# 'country' 
+ask_a_manager_2021 %>% 
+  count(Country, sort=TRUE) %>% 
+  mutate(percent = 100* n/sum(n))
+
+```
+
+
+```{r}
+dataframe1 <- 
+  ask_a_manager_2021 %>% 
+  group_by(country) %>% 
+  count()
+```
+
+
+```{r}
+# 'city' 
+ask_a_manager_2021 %>% 
+  count(city, sort=TRUE) %>% 
+  mutate(percent = 100* n/sum(n))
+```
+
+
+```{r}
+# highest_level_of_education_completed 
+ask_a_manager_2021 %>% 
+  count(highest_level_of_education_completed) %>% 
+  mutate(percent = 100* n/sum(n))%>% 
+  arrange(desc(percent))
+```
+
+```{r}
+# gender
+ask_a_manager_2021 %>% 
+  count(gender) %>% 
+  mutate(percent = 100* n/sum(n))%>% 
+  arrange(desc(percent))
+```
+
+```{r}
+# race
+ask_a_manager_2021 %>% 
+  count(race) %>% 
+  mutate(percent = 100* n/sum(n))%>% 
+  arrange(desc(percent))
+```
+
+```{r}
+# overall_years_of_professional_experience 
+ask_a_manager_2021 %>% 
+  count(overall_years_of_professional_experience ) %>% 
+  mutate(percent = 100* n/sum(n))%>% 
+  arrange(desc(percent))
+```
+
+```{r}
+# years_of_experience_in_field  
+ask_a_manager_2021 %>% 
+  count(years_of_experience_in_field  ) %>% 
+  mutate(percent = 100* n/sum(n))%>% 
+  arrange(desc(percent))
+```
+
+
+
+
+## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
+
+### Section 3.1 Gender pay inequality accross age groups in UK
+First, let's look at the gender pay gap within UK for each age groups.
+
+```{r}
+#prepare dataframe for comparison
+pay_gender_uk <- clean_data %>% 
+  filter(Country == "GBR") %>% 
+  select(how_old_are_you, gender, tot_earnings_USD) %>% 
+  filter(gender=="Woman" | gender=="Man") %>% 
+  group_by(how_old_are_you, gender) %>% 
+  summarise(median_pay = median(tot_earnings_USD)) %>% 
+  pivot_wider(names_from = gender, 
+              values_from = median_pay) %>% 
+  mutate(pay_gap = Man - Woman)
+
+pay_gender_uk %>% 
+  ggplot(aes(x=how_old_are_you, y=pay_gap, fill=how_old_are_you)) +
+  geom_col() +
+  labs(title="Gender pay gap within UK for each age groups",
+       x="Age group",
+       y="Pay gap (men's - women's)",
+       fill="Age group")
+```
+The graph exhibits that men earns more than women across all age groups. This is probably because of the fact that males take more senior roles than females as these jobs is highly associated with high working hours, which has been shown to be inherently gendered ([Gascoigne et al. 2015](https://journals.sagepub.com/doi/abs/10.1177/1350508415572511)). 
+
+And it seems that throughout the lifetime, as people grow older, the gender pay gap becomes more significant except for age group 45-54. 
+- The gender pay gap is relatively small for the age group 18-24.
+- The gap continues to increase. This is probably because that women take up more caring responsibilities for children and have more part-time jobs as they grow older. However, we 
+- For age group 45-54, the result seems to be unexpected, therefore we look a bit further as follows.
+
+```{r}
+#prepare the dataframe for the violin plot
+var_gender_uk <- clean_data %>% 
+  filter(Country == "GBR") %>% 
+  select(how_old_are_you, gender, tot_earnings_USD) %>% 
+  filter(gender=="Woman" | gender=="Man") %>% 
+  mutate(tot_earnings_USD_log = log(tot_earnings_USD))
+
+#make violin plot
+var_gender_uk %>% 
+  ggplot(aes(x=how_old_are_you, 
+             y=tot_earnings_USD_log, 
+             color=how_old_are_you)) + 
+  geom_violin()+
+  geom_boxplot(width=0.1)+
+  stat_summary(fun.y=median, geom="point", size=2, color="red") +
+  stat_summary(aes(y = tot_earnings_USD_log,group=1), fun.y=median, colour="red", geom="line",group=1) +
+  facet_wrap(~gender) +
+  theme(legend.position="bottom") +
+  labs(title = "Violin plot for salary in each age group for each gender",
+       x = "Age group",
+       y = "Total earnings",
+       color = "Age group")
+```
+
+Based on the violin plot, we can see that for men, they reach their peak earning ability during age 35-44, and they earn more or less the same throughout years until they reach 60s, when their earning begins to slide down. Whereas women reach theirs during age 45-54, and immediately slide down in the coming age group. This pattern explains why we got the somewhat unexpected result from the previous plot for age 45-54. 
+
+The gender pay gap is relatively small for the age group 18-24. This is probably because nowdays women receive similar education and enter similar early career as men. But is it statistically significant? We will look at the following.  
+
+#### Do UK men earn **statistically** more than women in **age group 18-24**?
+
+In this case, our null hypothesis is that the mean of earnings between man and woman are the same. 
+
+$H_0: \overline{x_1} = \overline{x_2}$
+
+First, let's produce and take a look at the density chart. 
+```{r ci_hypothesis_age_salary}
+#prepare dataframe for comparison
+salary_gender_uk <- clean_data %>% 
+  filter(Country == "GBR" & how_old_are_you=="18-24") %>% 
+  select(how_old_are_you, gender, tot_earnings_USD) %>% 
+  filter(gender=="Woman" | gender=="Man")
+
+#add index column for each of the rows and take log for earnings
+salary_gender_uk$ID <- seq.int(nrow(salary_gender_uk))
+salary_gender_uk <- salary_gender_uk %>% 
+  mutate(tot_earnings_USD_log = log(tot_earnings_USD))
+
+#prepare gender comparison by converting long table to wide table
+salary_gender_uk_wider <- salary_gender_uk %>% 
+  pivot_wider(names_from = gender, 
+              values_from = tot_earnings_USD_log)
+
+#calculate the median for each of the gender group
+median_woman <- salary_gender_uk_wider %>% 
+  filter(!is.na(Woman)) %>% 
+  pull(Woman) %>% 
+  median()
+median_man <- salary_gender_uk_wider %>% 
+  filter(!is.na(Man)) %>% 
+  pull(Man) %>% 
+  median()
+  
+#make mirror density chart
+salary_gender_uk_wider %>% ggplot(aes(x=x) ) +
+  # Top for woman
+  geom_density(aes(x = Woman, y = ..density..), fill="#69b3a2", alpha = 0.3) +
+  geom_label( aes(x=4.5, y=0.25, label="Woman"), color="#69b3a2") +
+  
+  # Bottom for man
+  geom_density( aes(x = Man, y = -..density..), fill= "#404080", alpha = 0.3) +
+  geom_label( aes(x=4.5, y=-0.25, label="Man"), color="#404080") +
+  
+  #Add median point for both gender groups
+  geom_point(aes(x=median_woman, y=0.01), size=1.5, colour="#69b3a2")+
+  geom_point(aes(x=median_man, y=-0.01), size=1.5, colour="#404080")+
+  labs(title = "Mirror density plot of the two gender groups in age 18-24 in UK",x = "Log of salary", y = "Density")
+
+```
+
+We can see from the mirror density chart above that the density chart for man is more left-skewed than that for woman. And the median of salary for man is higher. However, is it statistically significant that on average, men earn more than women in this age group? Let's produce and look at the confidence intervals plot. 
+
+```{r ci_hypothesis_age_salary}
+#calculate man and woman confidence intervals for the age group 18-24
+salary_gender_comparison <- salary_gender_uk %>% 
+  group_by(gender) %>% 
+  summarise(mean_salary = mean(tot_earnings_USD_log),
+            sd_salary = sd(tot_earnings_USD_log, na.rm=TRUE),
+            count_salary = n(),
+            se_salary = sd_salary / sqrt(count_salary),
+            ci_salary_up = mean_salary + qt(.975, count_salary-1)*se_salary,
+            ci_salary_dw = mean_salary - qt(.975, count_salary-1)*se_salary
+            )
+
+#plot the confidence intervals in a graph
+salary_gender_comparison %>% 
+  ggplot(aes(x=mean_salary, y=gender, color=gender))+
+    geom_rect(fill="grey",alpha=0.5, color = "grey",
+            aes(xmin=max(ci_salary_dw),
+                xmax=min(ci_salary_up),
+                ymin=-Inf,
+                ymax=Inf))+
+  geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
+  geom_point(aes(x=mean_salary, y=gender), size=3)+
+  geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
+  labs(title="Do UK man aged 18-24 earn more than woman in the same age group?",
+       subtitle = "95% confidence intervals overlap",
+       x = "Mean log of annual earnings",
+       y = "Gender",
+       color="Gender")
+```
+
+From the graph we can see that the confidence intervals overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
+
+```{r}
+#calculate the t-stats for gender pay gap in the age group of 18-24
+t.test(tot_earnings_USD_log ~ gender, data = salary_gender_uk)
+```
+
+We can see that the $|t-stat| < 2$ and $|p-value| > 0.05$. We still cannot reject the null hypothesis $H_0$ and therefore UK males aged between 18-24 do not earn significantly higher than women in the same age group. 
+
+### Section 3.2 Gender pay inequality across industries in US
+
+```{r}
+#top 10 industries in UK
+top_10_industry <- clean_data %>% 
+  filter(Country == "USA") %>% 
+  group_by(industry) %>% 
+  count() %>% 
+  arrange(-n) %>% 
+  head(30) %>% 
+  select(industry)
+
+#prepare dataframe for comparison
+top_10_clean_data <- top_10_industry %>% 
+  left_join(clean_data, by="industry") %>% 
+  filter(Country == "USA") %>% 
+  filter(gender == "Man" | gender == "Woman") %>% 
+  mutate(tot_earnings_USD_log = log(tot_earnings_USD)) %>% 
+  filter(tot_earnings_USD_log>0)
+
+pay_industry_uk <- top_10_clean_data %>% 
+  select(industry, gender, tot_earnings_USD_log) %>% 
+  group_by(industry, gender) %>% 
+  summarise(mean_pay = mean(tot_earnings_USD_log)) %>% 
+  pivot_wider(names_from = gender, 
+              values_from = mean_pay) %>% 
+  mutate(pay_gap = Woman - Man) %>% 
+  #select the industries where women earn more than men
+  filter(pay_gap > 0)
+
+#plot the graph
+pay_industry_uk %>% 
+  ggplot(aes(x=reorder(industry,pay_gap), y=pay_gap, fill=industry)) +
+  geom_col() +
+  labs(title="Industries where women are paid more than men",
+       x="Industry",
+       y="Pay gap (women's - men's)",
+       fill="Industry") +
+  theme(legend.position="bottom") +
+  coord_flip()
+```
+
+Based on the graph, we can see that in the **"Publishing"** industry, the pay gap is the most significant among top industries where most people work in. But is it statistically significant? Let's look at the following. 
+
+#### Do UK men earn **statistically** more than women in **Publishing** sector?
+
+In this case, our null hypothesis is that the mean of earnings between man and woman are the same. 
+
+$H_0: \overline{x_1} = \overline{x_2}$
+
+```{r ci_hypothesis_age_salary}
+#calculate the log
+mkt_gender_uk <- top_10_clean_data %>% 
+  filter(industry == "Publishing") 
+
+#calculate man and woman confidence intervals for the age group 18-24
+ci_mkt_gender_uk <- mkt_gender_uk %>% 
+  group_by(gender) %>% 
+  summarise(mean_salary = mean(tot_earnings_USD_log),
+            sd_salary = sd(tot_earnings_USD_log, na.rm=TRUE),
+            count_salary = n(),
+            se_salary = sd_salary / sqrt(count_salary),
+            ci_salary_up = mean_salary + qt(.975, count_salary-1)*se_salary,
+            ci_salary_dw = mean_salary - qt(.975, count_salary-1)*se_salary
+            )
+
+#plot the confidence intervals in a graph
+ci_mkt_gender_uk %>% 
+  ggplot(aes(x=mean_salary, y=gender, color=gender))+
+    geom_rect(fill="grey",alpha=0.5, color = "grey",
+            aes(xmin=max(ci_salary_dw),
+                xmax=min(ci_salary_up),
+                ymin=-Inf,
+                ymax=Inf))+
+  geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
+  geom_point(aes(x=mean_salary, y=gender), size=3)+
+  geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
+  labs(title="Do UK women earn more than men in the Marketing, Advertising & PR sector?",
+       subtitle = "95% confidence intervals overlap",
+       x = "Mean log of annual earnings",
+       y = "Gender",
+       color="Gender")
+```
+
+From the graph we can see that the confidence intervals overlap. This way we cannot reject the null hypotheses $H_0$ and therefore the below t-test will be performed. 
+
+```{r}
+#calculate the t-stats for gender pay gap in the hospitality and events industry
+t.test(tot_earnings_USD_log ~ gender, data = mkt_gender_uk)
+```
+
+We can judge from above results that we cannot reject the null hypothesis $H_0$. Therefore, although on average, women earn more than men in **"Marketing, Advertising & PR"** sector, it is still not significant that men and women earn differently in statistical sense. 
+
+### Section 3.3 Race
+```{r}
+clean_data %>% 
+  filter(tot_earnings_USD<300000) %>% 
+  drop_na(race) %>% 
+  ggplot(aes(x = race,y = tot_earnings_USD))+
+  geom_boxplot()+
+  labs(title = "Total earning of different races",
+       subtitle = "for people with earnings ranged from 0 to 300000 USD",
+       x = "Race",
+       y = "Total earnings in USD")
+  
+```
+```{r}
+earning_race <- clean_data %>% 
+  group_by(race) %>% 
+  summarise (mean = mean(tot_earnings_USD), SD = sd(tot_earnings_USD), sample_size = n()) %>% 
+  mutate(se = sqrt(SD^2/sample_size), t_value = qt(p=.05/2, df=sample_size-1, lower.tail=FALSE),
+         margin_of_error = t_value*se, earning_low = mean-t_value*se, earning_high = mean+t_value*se)
+
+earning_race
+```
+```{r}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","Black")))
+```
+```{r}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","White")))
+```
+```{r}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Asian","Hispanic")))
+```
+```{r}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("White","Black")))
+```
+```{r}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("White","Hispanic")))
+```
+```{r}
+# hypothesis testing using t.test() 
+t.test(tot_earnings_USD ~ race, data = clean_data %>% filter(race %in% c("Hispanic","Black")))
+```
+* From the above analysis, it can be seen that the largest pay gap exists between White and Asian. To further visualise the difference, a confidence interval plot is created.
+
+```{r, hypothesis_testing}
+
+
+# hypothesis testing using infer package
+set.seed(1234)
+
+earning_race_boot <- clean_data %>% 
+  drop_na(race) %>% 
+  filter(race %in% c("Asian","White")) %>% 
+  # Specify the variable of interest "tot_earnings_USD" and group by race "Asian" and "White"
+  specify(tot_earnings_USD ~ race) %>% 
+  
+  # Hypothesize a null of no (or zero) difference
+  hypothesize (null = "independence") %>% 
+  
+  # Generate a bunch of simualted samples
+  generate (reps = 1000, type = "permute") %>% 
+  
+  # Find the mean diffference of each sample
+  calculate(stat = "diff in means",
+            order = c("Asian", "White"))
+
+
+# Select the low and high endpoint from the formula-calculated CIs
+formula_ci <- earning_race %>%
+  select(earning_low,earning_high)
+
+# Generate 95% percentile of the difference in the two genders' salaries from the bootstrap data
+percentile_ci <- earning_race_boot %>% 
+  get_confidence_interval(level = 0.95, type = "percentile")
+
+percentile_ci
+```
+
+```{r}
+observed_difference <- earning_race$mean[1]-earning_race$mean[2]
+observed_difference
+```
+
+* The difference between the earning of these two races is not within the 95% confidence interval generated by bootstrap.
+
+```{r}
+visualize(earning_race_boot) + 
+  annotate("rect", xmin=percentile_ci$lower_ci, xmax=percentile_ci$upper_ci, ymin=0, ymax=Inf, alpha=0.3, fill = "pink") +
+  #shade_ci(endpoints = percentile_ci,fill = "khaki")+
+  labs(title='Differences in White and Asian Mean Salary in a world where there is no difference', 
+       subtitle = "Observed difference marked in red",
+       x = "Mean (White salary - Asian salary)", y = "Count")+
+  geom_vline(xintercept = observed_difference, colour = "red", linetype="solid", size=1.2)+
+  theme_bw()+
+  NULL
+  
+```
+
+### Section 3.4 Education
+```{r}
+clean_data %>% 
+  filter(tot_earnings_USD<300000) %>% 
+  drop_na(highest_level_of_education_completed) %>% 
+  ggplot(aes(x = tot_earnings_USD, y = fct_reorder(highest_level_of_education_completed,tot_earnings_USD)))+
+  geom_boxplot()+
+  labs(title = "Total earning of people with different education level",
+       subtitle = "for people with earnings ranged from 0 to 300000 USD",
+       x = "Total earnings in USD",
+       y = "Highest level of education")
+  
+```
+
+### Section 3.5 Experience
+```{r}
+clean_data %>% 
+  filter(tot_earnings_USD<300000) %>% 
+  drop_na(overall_years_of_professional_experience) %>% 
+  ggplot(aes(x = tot_earnings_USD, y = fct_reorder(overall_years_of_professional_experience,tot_earnings_USD)))+
+  geom_boxplot()+
+  labs(title = "Total earning of people with difference oveall experience",
+       subtitle = "for people with earnings ranged from 0 to 300000 USD",
+       x = "Total earnings in USD",
+       y = "Overall experience")
+  
+```
+
+
+## Section 4 - Analysis using Correlation and Linear Regression
+
+
+Delete the chunks below if you want to... 
+```{r}
+# How is salary distributed?
+
+ggplot(clean_data, aes(x=tot_earnings_USD))+
+  geom_density()
+
+
+ggplot(clean_data, aes(x=tot_earnings_USD))+
+  stat_ecdf()
+```
+
+```{r}
+# what about log(salary)? 
+ggplot(clean_data, aes(x=log(tot_earnings_USD)))+
+  geom_density()
+
+
+ggplot(clean_data, aes(x=log(tot_earnings_USD)))+
+  stat_ecdf()
+```
+
+Seeing these graphs, it is probably optimal to use the log of total earnings (USD) as it is more normally distributed.
+
+```{r}
+regression_data <- clean_data %>% 
+  
+  na.omit()
+```
+
+```{r}
+regression_data <- regression_data[regression_data$tot_earnings_USD != 0,] %>% 
+  mutate(log_earnings = log(tot_earnings_USD)) 
+```
+
+
+
+
+```{r}
+model_1 <- lm(log_earnings ~ how_old_are_you + overall_years_of_professional_experience +
+     years_of_experience_in_field, data = regression_data)
+
+model_1 %>% get_regression_table()
+model_1 %>% get_regression_summaries()
+```
+
+Education variable is also slightly cleaned to make things easier in the regression
+```{r}
+#Clean "education"
+clean_data$highest_level_of_education_completed <- gsub("Some college", "College degree", clean_data$highest_level_of_education_completed)
+clean_data$highest_level_of_education_completed <- gsub("Professional degree (MD,JD, etc.)", "Master's degree", clean_data$highest_level_of_education_completed)
+```
+
+```{r}
+regression_data_dummies <- regression_data %>% 
+  dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race"))
+```
+
+```{r}
+names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_Master's degree"] <- "highest_level_of_education_completed_Masters_degree"
+names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_College degree"] <- "highest_level_of_education_completed_College_degree"
+names(regression_data_dummies)[names(regression_data_dummies) == "highest_level_of_education_completed_High School"] <- "highest_level_of_education_completed_High_School"
+```
+
+
+```{r}
+model_2 <- lm(log_earnings ~ how_old_are_you + overall_years_of_professional_experience +
+     years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
+
+model_2 %>% get_regression_table()
+model_2 %>% get_regression_summaries()
+```
+
+```{r}
+car::vif(model_2)
+```
+
+Since overall years of professional experience has very high multicollinearity, we remove it in order to improve this
+```{r}
+model_3 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
+
+model_3 %>% get_regression_table()
+model_3 %>% get_regression_summaries()
+```
+It worked! No more VIF problems.
+```{r}
+car::vif(model_3)
+```
+
+Now we will see if being in a certain country or industry has a significant effect or not (using top ten industries and a few selected countries)
+
+```{r}
+top_10_dummies <- top_10_clean_data %>% 
+  dummy_cols(select_columns = c("gender", "highest_level_of_education_completed", "race", "Industry", "Country"))
+  
+```
+
+```{r}
+model_4 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
+
+model_4 %>% get_regression_table()
+model_4 %>% get_regression_summaries()
+```
+
+```{r}
+null_model <- glm(log_earnings ~ 1 , data = regression_data_dummies)
+full_model <- glm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
+step(null_model, direction = "both", scope = list("lower" = null_model, "upper" = full_model))
+```
+
+
+```{r}
+model_5 <- lm(log_earnings ~ years_of_experience_in_field + gender_Man + race_Asian + 
+    how_old_are_you + highest_level_of_education_completed_High_School + 
+    highest_level_of_education_completed_College_degree + highest_level_of_education_completed_Masters_degree + 
+    gender_Woman + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
+
+model_5 %>% get_regression_table()
+model_5 %>% get_regression_summaries()
+```
+
+
+## Section 5 - Conclusions and Evaluation
+
+
+
+
+
+
+
+
+
+
+
+
+
