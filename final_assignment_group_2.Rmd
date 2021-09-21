@@ -46,6 +46,7 @@ We subsequently assign the raw data to a new variable (ask_a_manager_2021), whic
 ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>% 
   janitor::clean_names()
 ```
+
 ```{r}
 skimr::skim(ask_a_manager_2021)
 ```
@@ -57,7 +58,7 @@ By analysing n_missing and n_unique, we can gain an insight into which variables
 
 We begin by cleaning the "country" variable. This involves using standardised 'countrycode' to convert the countries into a standard, recognisable format. 
 
-Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change instances of "England" to "UK". We ignore misspellings, as they only represent a small portion of the data set. 
+Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change occurrences of "England" to "UK". We ignore misspellings, as they only represent a small portion of the data set. 
 
 ```{r}
 # Clean specific country names so that they can be recognised by iso3 countrycode. 
@@ -90,7 +91,7 @@ colnames(ask_a_manager_2021)[19] <- "Country"
 ```
 
 
-Next, we create a new dataframe by selecting the columns (variables) that are most suitable for analysis. For example, this involves omitting the column 'additional_context_on_job_title'. This column contains little information that is appropriate for statistical analysis. 
+Next, we create a new dataframe by selecting the columns (variables) that are most suitable for analysis. For example, this involves omitting the column `additional_context_on_job_title`. This column contains little information that is appropriate for statistical analysis. 
 
 ```{r}
 #Create a new dataframe for the desired data
@@ -104,7 +105,7 @@ We repeat the procedure we used to clean the country data for the states - using
 #Clean "states" so that they can be recognised by specific state code. 
 clean_data$state <- gsub("District of Columbia, Virginia", "Virginia", clean_data$state)
 clean_data$state <- gsub("District of Columbia, Maryland", "Maryland", clean_data$state)
-clean_data$state <- gsub("District of Columbia, Washington", "Washington", clean_data$state)
+clean_data$state <- gsub("District of Columbia, Washington", "Maryland", clean_data$state)
 ```
 
 The state names are standardised as follows, using the abbreviations taken from the following wikipedia page. 
@@ -270,82 +271,80 @@ clean_data$city <- gsub("washington dc", "DC", clean_data$city)
 ```
 
 
-We follow this by cleaning the 'race' variable, once again aggregating similar/comparable instances of the same ethnicity to create a more transparent data set. 
+We follow this by cleaning the 'race' variable, once again aggregating similar/comparable occurrences of the same ethnicity to create a more transparent data set. 
 
 ```{r}
 clean_data$race <- gsub("Asian or Asian American", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian or Asian American, Another option listed here or prefer not to answer", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian or Asian American, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Black or African American", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Black or African American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Black or African American, Native American or Alaska Native, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Middle Eastern or Northern African", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or Asian American, White, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Black or African American", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Black or African American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Black or African American, Native American or Alaska Native, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Hispanic, Latino, or Spanish origin, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Middle Eastern or Northern African", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, Native American or Alaska Native, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or Asian American, White, Another option not listed here or prefer not to answer", "Asian", clean_data$race)
 clean_data$race <- gsub("Black or African American", "Black", clean_data$race)
 clean_data$race <- gsub("Black or African American, Another option not listed here or prefer not to answer", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black or African American, Middle Eastern or Northern African, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin", "Black", clean_data$race)
+#clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Black or African American, Hispanic, Latino, or Spanish origin, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Black or African American, Middle Eastern or Northern African, White", "Black", clean_data$race)
 clean_data$race <- gsub("Hispanic, Latino, or Spanish origin", "Hispanic", clean_data$race)
 clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Another option not listed here or prefer not to answer", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, Another option not listed here or prefer not to answer, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White, Another option not listed here or prefer not to answer", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native, White", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, White", "Other", clean_data$race)
-clean_data$race <- gsub("Middle Eastern or Northern African, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native, Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native, White", "Other", clean_data$race)
-clean_data$race <- gsub("Native American or Alaska Native, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("White, Another option not listed here or prefer not to answer", "White", clean_data$race)
-clean_data$race <- gsub("Another option not listed here or prefer not to answer", "Other", clean_data$race)
-clean_data$race <- gsub("Asian or African American", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, Other, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic, Other, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Middle Eastern or Northern African, White", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, Another option not listed here or prefer not to answer, White", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, Native American or Alaska Native, White", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Latino, or Spanish origin, White, Another option not listed here or prefer not to answer", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native", "Other", clean_data$race)
+#clean_data$race <- gsub("Middle Eastern or Northern African, Native American or Alaska Native, White", "Other", clean_data$race)
+#clean_data$race <- gsub("Middle Eastern or Northern African, White", "Other", clean_data$race)
+#clean_data$race <- gsub("Middle Eastern or Northern African, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
+#clean_data$race <- gsub("Native American or Alaska Native", "Other", clean_data$race)
+#clean_data$race <- gsub("Native American or Alaska Native, Another option not listed here or prefer not to answer", "Other", clean_data$race)
+#clean_data$race <- gsub("Native American or Alaska Native, White", "Other", clean_data$race)
+#clean_data$race <- gsub("Native American or Alaska Native, White, Another option not listed here or prefer not to answer", "Other", clean_data$race)
+#clean_data$race <- gsub("White, Another option not listed here or prefer not to answer", "White", clean_data$race)
+#clean_data$race <- gsub("Another option not listed here or prefer not to answer", "Other", clean_data$race)
+#clean_data$race <- gsub("Asian or African American", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or African American, Other, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or African American, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian or African American, Hispanic", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, Hispanic, Other, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, Hispanic, White", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian, Other", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black, Hispanic", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black, Other, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, Black, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Asian, White", "Asian", clean_data$race)
-clean_data$race <- gsub("Black", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Hispanic", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Hispanic, Other, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Hispanic, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Asian, Black", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, Black, Hispanic", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, Black, Other, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, Black, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, White", "Asian", clean_data$race)
+#clean_data$race <- gsub("Black, Hispanic", "Black", clean_data$race)
+#clean_data$race <- gsub("Black, Hispanic, Other, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Black, Hispanic, White", "Black", clean_data$race)
 clean_data$race <- gsub("Black, Other", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Other, Other, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black, Other, White", "Black", clean_data$race)
-clean_data$race <- gsub("Black, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Black, Other, Other, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Black, Other, White", "Black", clean_data$race)
+#clean_data$race <- gsub("Black, White", "Black", clean_data$race)
 clean_data$race <- gsub("Hispanic, Other", "Hispanic", clean_data$race)
 clean_data$race <- gsub("Hispanic, Other, Other", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, Other, White", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, Other, White", "Hispanic", clean_data$race)
 clean_data$race <- gsub("Other, Other", "Other", clean_data$race)
-clean_data$race <- gsub("Otherc, Other, White", "Other", clean_data$race)
+clean_data$race <- gsub("Other, Other, White", "Other", clean_data$race)
 clean_data$race <- gsub("Other, White", "Other", clean_data$race)
-clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
+#clean_data$race <- gsub("Asian, Hispanic", "Asian", clean_data$race)
 clean_data$race <- gsub("Asian, Other", "Asian", clean_data$race)
 clean_data$race <- gsub("Hispanic, Other", "Hispanic", clean_data$race)
-clean_data$race <- gsub("Hispanic, White", "Hispanic", clean_data$race)
+#clean_data$race <- gsub("Hispanic, White", "Hispanic", clean_data$race)
 ```
 
 
@@ -353,7 +352,8 @@ Now we will clean the currencies and salaries. Since not everyone is paid in the
 
 ```{r}
 clean_data <- clean_data %>% 
-  filter(clean_data$currency != "Other") #remove 'other' currencies
+  #remove 'other' currencies
+  filter(clean_data$currency != "Other") 
 
 #make AUD and NZD same currency
 clean_data$currency[clean_data$currency == "AUD/NZD"] <- "AUD"
@@ -420,14 +420,6 @@ clean_data <- clean_data %>%
 
 
 
-
-
-
-
-
-
-
-
 ## Section 2 - Graphically summarising and exploring the Data.
 
 ### Section 2.1 - Exploration of the Independent Variables
@@ -452,6 +444,10 @@ ggplot(df1, aes(x="", y=Value, fill=Group))+
   coord_polar(theta = "y") + 
   theme_void() + 
   labs(title="Percentage of Surveyed people within each age category")
+# add percentage mark and change labels
+  
+  #geom_text(aes(x=1.05*sin(middle), y=1.05*cos(middle),label = Value,
+                #hjust = hjust, vjust = vjust))
 
 ```
 
@@ -626,7 +622,7 @@ ggplot(df7, aes(x="", y=Value, fill=Group))+
   geom_text(aes(label=format(round(Value,1), nsmall=1)), position = position_stack(vjust = 0.5))+
   coord_polar(theta = "y") + 
   theme_void() + 
-  labs(title="Percentage of people in each category of SECTOR-SPECIFIC experience level")
+  labs(title="Percentage of people in each category of \nSECTOR-SPECIFIC experience level")
 ```
 
 Here we see that almost nobody has more than 20 years of sector specific experience - once again we expect these results, as the average number of years of sector specific experience should almost certainly be less than the average number of years of total experience. 
@@ -959,7 +955,7 @@ ci_mkt_gender_uk %>%
   geom_errorbarh(aes(xmin=ci_salary_dw,xmax=ci_salary_up))+
   geom_point(aes(x=mean_salary, y=gender), size=3)+
   geom_text(aes(label=round(mean_salary, digits=2)), vjust = -1.5)+
-  labs(title="Do UK women earn more than men in the Marketing, Advertising & PR sector?",
+  labs(title="Do US women earn more than men in the Publishing sector?",
        subtitle = "95% confidence intervals overlap",
        x = "Mean log of annual earnings",
        y = "Gender",
@@ -1148,6 +1144,7 @@ model_1 %>% get_regression_summaries()
 Education variable is also slightly cleaned to make things easier in the regression
 ```{r}
 #Clean "education"
+#add new dataframe for this
 clean_data$highest_level_of_education_completed <- gsub("Some college", "College degree", clean_data$highest_level_of_education_completed)
 clean_data$highest_level_of_education_completed <- gsub("Professional degree (MD,JD, etc.)", "Master's degree", clean_data$highest_level_of_education_completed)
 ```
@@ -1180,9 +1177,16 @@ Since overall years of professional experience has very high multicollinearity, 
 ```{r}
 model_3 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
+#
 model_3 %>% get_regression_table()
+```
+
+
+```{r}
+#
 model_3 %>% get_regression_summaries()
 ```
+
 It worked! No more VIF problems.
 ```{r}
 car::vif(model_3)
@@ -1196,12 +1200,7 @@ top_10_dummies <- top_10_clean_data %>%
   
 ```
 
-```{r}
-model_4 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
 
-model_4 %>% get_regression_table()
-model_4 %>% get_regression_summaries()
-```
 
 ## Section 5 - Conclusions and Evaluation
 
