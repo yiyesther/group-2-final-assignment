@@ -946,6 +946,9 @@ regression_data <- regression_data[regression_data$tot_earnings_USD != 0,] %>%
   mutate(log_earnings = log(tot_earnings_USD)) 
 ```
 
+
+
+
 ```{r}
 model_1 <- lm(log_earnings ~ how_old_are_you + overall_years_of_professional_experience +
      years_of_experience_in_field, data = regression_data)
@@ -1011,6 +1014,24 @@ model_4 <- lm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + 
 model_4 %>% get_regression_table()
 model_4 %>% get_regression_summaries()
 ```
+
+```{r}
+null_model <- glm(log_earnings ~ 1 , data = regression_data_dummies)
+full_model <- glm(log_earnings ~ how_old_are_you  + years_of_experience_in_field  + gender_Man + gender_Woman + highest_level_of_education_completed_College_degree + highest_level_of_education_completed_High_School + highest_level_of_education_completed_Masters_degree  + race_Asian + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
+step(null_model, direction = "both", scope = list("lower" = null_model, "upper" = full_model))
+```
+
+
+```{r}
+model_5 <- lm(log_earnings ~ years_of_experience_in_field + gender_Man + race_Asian + 
+    how_old_are_you + highest_level_of_education_completed_High_School + 
+    highest_level_of_education_completed_College_degree + highest_level_of_education_completed_Masters_degree + 
+    gender_Woman + race_White + race_Hispanic + race_Black , data = regression_data_dummies)
+
+model_5 %>% get_regression_table()
+model_5 %>% get_regression_summaries()
+```
+
 
 ## Section 5 - Conclusions and Evaluation
 
