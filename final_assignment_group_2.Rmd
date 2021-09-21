@@ -27,6 +27,8 @@ library(quantmod)
 library(moderndive)
 library(fastDummies)
 library(see)
+library(ggrepel)
+library(infer)
 ```
 
 
