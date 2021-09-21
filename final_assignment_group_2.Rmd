@@ -57,7 +57,7 @@ By analysing n_missing and n_unique, we can gain an insight into which variables
 
 We begin by cleaning the "country" variable. This involves using standardised 'countrycode' to convert the countries into a standard, recognisable format. 
 
-Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change instances of "England" to "UK". We ignore mispellings, as they only represent a small portion of the data set. 
+Firstly, we need to alter the names of entries that cannot be recognised by the 'countrycode'... for example - "England" is not picked up by the 'countrycode', we need to change instances of "England" to "UK". We ignore misspellings, as they only represent a small portion of the data set. 
 
 ```{r}
 # Clean specific country names so that they can be recognised by iso3 countrycode. 
@@ -146,7 +146,7 @@ clean_data <- clean_data %>%
 ```
 
 
-We can confirm the state cleaning has worked by counting the state abbreviations column - this has 51 entries - the 50 states + NA entries (which arrise due to the large number of people completing this survey who live outside of America, as well as those who live in the District of Columbia which is not registered as a state). 
+We can confirm the state cleaning has worked by counting the state abbreviations column - this has 51 entries - the 50 states + NA entries (which arise due to the large number of people completing this survey who live outside of America, as well as those who live in the District of Columbia which is not registered as a state). 
 
 ```{r}
 temp <- clean_data[is.na(clean_data$state_abb),]
@@ -163,6 +163,7 @@ The gender variable is cleaned by adding entries with "Prefer not to answer" to 
 clean_data$gender <- gsub("Prefer not to answer", "Other or prefer not to answer", clean_data$gender)
 clean_data$gender <- gsub("Non-binary", "Other or prefer not to answer", clean_data$gender)
 ```
+
 
 The "industry" data is cleaned manually, by grouping similar categories of industry. We clean data for all industries that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most-common) industries. 
 
@@ -204,17 +205,8 @@ clean_data$industry <- gsub("manufacturing", "Manufacturing", clean_data$industr
 
 ```
 
-```{r}
-# Examining the industry data to ensure that it has been cleaned sufficiently. 
-temp3 <- clean_data %>% 
-  count(industry, sort=TRUE) 
-temp3
-```
 
-
-The "city" data is also cleaned manually, this is done by grouping repeated names of the same city - for instance "New York", "New York City", "NYC" are all grouped as "NYC". We clean data for all cities that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most lived in) cities. For example - when comparing the average salaries of people who live in New York with those who live in Washington - further cleaning of city data with n < 5 items will not largely impact this comparison.  
-
-
+The "city" data is also cleaned manually, this is done by grouping repeated names of the same city - for instance "New York", "New York City", "NYC" are all grouped as "NY". We clean data for all cities that have n >= 5, beyond this point we assume that further cleaning of the data will have a negligible effect when comparing the characteristics of the main (most lived in) cities. For example - when comparing the average salaries of people who live in New York with those who live in Washington - further cleaning of city data with n < 5 items will not largely impact this comparison.  
 
 ```{r}
 #Clean City Data (clean all cities with n >= 5)
@@ -423,6 +415,7 @@ temp5
 
 
 At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. Finally, we omit the unnecessary variables: 
+
 
 ```{r}
 clean_data <- clean_data %>% 
