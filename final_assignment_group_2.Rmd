@@ -349,14 +349,7 @@ clean_data$race <- gsub("Hispanic, White", "Hispanic", clean_data$race)
 ```
 
 
-```{r}
-#Examining the top cities to ensure the data has been cleaned sufficiently.  
-temp4 <- clean_data %>% 
-  count(city, sort=TRUE) 
-temp4
-```
-
-Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some poeple also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
+Now we will clean the currencies and salaries. Since not everyone is paid in the same currency, we will translate everything into USD. Moreover, some people also receive bonuses and other types of monetary compensation, which will be added to the their yearly salary.
 
 ```{r}
 clean_data <- clean_data %>% 
@@ -380,6 +373,7 @@ clean_data <- clean_data %>%
 clean_data <- clean_data %>% 
   mutate(total_earnings = other_compensation + annual_salary)
 ```
+
 
 Now we will fetch the most recent exchange rates and create a table with them.
 
@@ -417,7 +411,6 @@ temp5
 
 
 At this point, all of the relevant variables have been cleaned to a satisfactory extent, we now have our cleaned data-set. Finally, we omit the unnecessary variables: 
-
 
 ```{r}
 clean_data <- clean_data %>% 
