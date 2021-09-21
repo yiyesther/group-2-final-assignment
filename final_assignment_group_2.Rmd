@@ -51,6 +51,7 @@ ask_a_manager_2021 <- googlesheets4::read_sheet(url) %>%
 skimr::skim(ask_a_manager_2021)
 ```
 
+
 By analysing n_missing and n_unique, we can gain an insight into which variables will require the most cleaning. For example, variables such as job_title and city have many unique entries - making it likely that these variables will be more difficult to clean. 
 
 
@@ -154,7 +155,7 @@ temp <- clean_data[is.na(clean_data$state_abb),]
 temp2 <- clean_data %>% 
   count(state_abb, sort = TRUE)
 temp2
-```
+
 
 
 The gender variable is cleaned by adding entries with "Prefer not to answer" to the "Other or prefer not to answer" group. 
@@ -655,21 +656,6 @@ Here, we can see that a disproportionate number of people surveyed are White. Ar
 The analysis above has highlighted some of the bias in our dataset that needs to be considered in our analysis. We have a disproportionately high number of females, as well as biases towards white people, college educated people, people who live in the United States and people in the 25-44 age group. This bias can generally be explained by the target audience of the "Ask A Manager" survey itself (which focused on females in managerial roles), but this needs to be considered in the analysis of this data set.
 
 
-
-### Section 2.1 - Exploring the dependent variable and its relations.
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Section 3 - Analysis using Confidence Intervals and Hypothesis Testing. 
 
 ### Section 3.1 Gender pay inequality accross age groups in UK
@@ -1047,10 +1033,6 @@ clean_data %>%
 ```
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> a6a5a307d212e6047a91320d84613d4dadc830b3
 ## Section 4 - Analysis using Correlation and Linear Regression
 
 
